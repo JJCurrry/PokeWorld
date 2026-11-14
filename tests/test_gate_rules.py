@@ -105,6 +105,14 @@ class TestRuleStrings(unittest.TestCase):
         out = gate.check_source("def f(x):\n    return x + 1\n", "src/gen/ok.py", ABILITIES)
         self.assertEqual(out, [])
 
+    def test_r1_avoids_common_false_positives(self):
+        """终局复核 N-01：动态构造检测不得因子串误伤合法代码。"""
+        for src in ('getattr(cfg, "import_path")\n', 'getattr(x, "randomness")\n',
+                    'compile("important", "<s>", "exec")\n', 'eval("1+1")\n'):
+            with self.subTest(src=src.strip()):
+                out = gate.check_source(src, "src/gen/ok.py", ABILITIES)
+                self.assertFalse(any(v.startswith("[R1 ") for v in out), (src, out))
+
     def test_r3_avoids_common_false_positives(self):
         """复评 R-05：`check` / 非字符串参数的能力判断不应误报。"""
         for src in ('check("hello")\n', "has(1)\n", "def f(x):\n    return x + 1\n"):

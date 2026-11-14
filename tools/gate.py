@@ -33,6 +33,12 @@ BANNED_ROOTS = frozenset({"random", "numpy", "time", "secrets", "datetime"})
 BANNED_ATTRS = frozenset({"random", "randint", "randrange", "choice", "shuffle", "uniform", "gauss", "randbelow"})
 DYNAMIC_IMPORTS = frozenset({"__import__", "import_module"})
 DYNAMIC_EVAL = frozenset({"eval", "exec", "compile", "getattr"})
+# 危险表达式用完整词 / 模式匹配，不用 "import"/"random" 裸子串，
+# 否则 `getattr(cfg, "import_path")`、`compile("important", ...)` 会误报（终局复核 N-01）。
+DANGEROUS_EVAL = re.compile(
+    r"__import__|import_module|\bimport\s+(?:random|numpy|time|secrets|datetime)\b|\brandom\b|\btime\s*\.",
+    re.IGNORECASE)
+EXACT_DANGEROUS_ATTRS = frozenset({"__import__", "import_module", "random", "randint", "time"})
 ABILITY_CHECKS = frozenset({
     "has", "has_ability", "require", "requires", "check_ability",
     "unlock", "is_unlocked", "can_enter",
@@ -154,10 +160,16 @@ def check_source(source: str, filename: str, abilities: tuple[str, ...] = ()) ->
                     shown = next((v for v in suspicious if v), "<参数不可静态求值>")
                     out.append(violation("R1 no_bare_random", where,
                         f"禁止动态导入「{shown}」或不可静态判定的导入参数；改用 rng(...)（不变量 #1）"))
-            if name in DYNAMIC_EVAL:
+            # 只查内建函数调用；`re.compile(pattern)` 这类方法调用不是代码构造，
+            # 否则规则门会扫到自己的正则字面量而自撞墙。
+            if name in DYNAMIC_EVAL and isinstance(node.func, ast.Name):
                 for arg in node.args:
                     value = _fold(arg)
-                    if value and any(token in value.casefold() for token in ("import", "random", "time.")):
+                    if not value:
+                        continue
+                    dangerous = (value in EXACT_DANGEROUS_ATTRS if name == "getattr"
+                                 else bool(DANGEROUS_EVAL.search(value)))
+                    if dangerous:
                         out.append(violation("R1 no_bare_random", where,
                             f"禁止通过 {name}() 动态构造随机/导入；改用 rng(...)（不变量 #1）"))
             if name in ABILITY_CHECKS and any(_fold(a) is not None for a in node.args):
