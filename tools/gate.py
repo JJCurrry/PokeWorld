@@ -3,11 +3,12 @@
 撞墙格式：`[R# rule] 文件:行 -> 怎么改`（规则名 + 位置 + 修正建议，三要素）。
 扫描 `SCAN_DIRS` 与仓库根级 `*.py`；`tests/` 是测试数据不参与生产扫描，但其余排除目录
 内出现 `.py` 会由 R6 报盲区。规则：R0 语法 / R1 裸随机 / R2 受保护数据 / R3 能力门 /
-R4 第三方 IP / R5 资产与占位登记 / R6 扫描范围。
+R4 第三方 IP / R5 资产与占位登记 / R6 扫描范围 / R7 golden seed 快照锁定。
 """
 from __future__ import annotations
 
 import ast
+import hashlib
 import re
 import sys
 import unicodedata
@@ -48,6 +49,10 @@ BANNED_WORDS = (
     "pocket monsters", "nintendo", "任天堂", "game freak", "pokeball",
 )
 PROVENANCE_ROW = re.compile(r"^\|\s*潮灵\s*`?(c\d+)`?\s+(\S+?)\s*\|", re.MULTILINE)
+# R7：golden seed 快照哈希由人确认后登记于此（不变量 #5 / ADR-001 §后果）。
+# 改快照必须同时改本常量并在 G1 工单变更记录留痕，禁止 AI 顺手更新快照把测试「修绿」。
+GOLDEN_SNAPSHOT_PATH = "tests/golden_seed.json"
+GOLDEN_SNAPSHOT_SHA256 = "c2dbd94dc16e237a7de9af7ba8af75f9167f602715f97c3fe7fa3baf652605d6"
 
 
 def violation(rule: str, where: str, hint: str) -> str:
@@ -250,6 +255,29 @@ def check_scan_scope(root: Path) -> list[str]:
     return out
 
 
+def check_golden_snapshot(root: Path) -> list[str]:
+    """R7：锁定快照哈希；变更须人确认（不变量 #5 / ADR-001 §后果）。
+
+    行尾归一化后再算哈希：Git 在 Windows 检出可能把 LF 转成 CRLF，
+    不得因此误报「快照被人改过」。内容任何改动仍会改变哈希。
+    """
+    path = root / GOLDEN_SNAPSHOT_PATH
+    if not path.is_file():
+        return [violation("R7 golden_seed", f"{GOLDEN_SNAPSHOT_PATH}:0",
+            "缺少 golden seed 快照；须由人确认后运行 tools/make_golden.py 重建并登记哈希（不变量 #5 / ADR-001）")]
+    try:
+        raw = path.read_bytes().replace(b"\r\n", b"\n")
+    except OSError as exc:
+        return [violation("R7 golden_seed", f"{GOLDEN_SNAPSHOT_PATH}:0",
+            f"快照无法读取：{exc}；请重新生成后再跑验证墙")]
+    digest = hashlib.sha256(raw).hexdigest()
+    if digest != GOLDEN_SNAPSHOT_SHA256:
+        return [violation("R7 golden_seed", f"{GOLDEN_SNAPSHOT_PATH}:0",
+            f"快照哈希 {digest[:12]}… 与登记值不符；生成器或快照变更须人确认后运行 tools/make_golden.py，"
+            "并把新哈希登记到 gate.GOLDEN_SNAPSHOT_SHA256 且在工单变更记录留痕（不变量 #5 / ADR-001）")]
+    return []
+
+
 def run(root: str | Path | None = None) -> list[str]:
     root = schema.root_of(root)
     out: list[str] = []
@@ -292,6 +320,7 @@ def run(root: str | Path | None = None) -> list[str]:
             continue
         out += check_source(source, rel, abilities)
     out += check_scan_scope(root)
+    out += check_golden_snapshot(root)
     return out
 
 

@@ -142,11 +142,14 @@ class TestGateEndToEnd(unittest.TestCase):
         for name in schema.PROTECTED:
             shutil.copyfile(ROOT / "data" / name, self.root / "data" / name)
         shutil.copyfile(ROOT / "data" / "MANIFEST.sha256", self.root / "data" / "MANIFEST.sha256")
-        for folder in ("src", "tools", "docs"):
+        for folder in ("src", "tools", "docs", "tests"):
             (self.root / folder).mkdir()
         (self.root / "src" / "ok.py").write_text("x = 1\n", encoding="utf-8")
         shutil.copyfile(ROOT / "docs" / "GDD-v0.md", self.root / "docs" / "GDD-v0.md")
         shutil.copyfile(ROOT / "docs" / "待裁定项.md", self.root / "docs" / "待裁定项.md")
+        # R7 需要快照副本，否则每个端到端用例都会先撞「快照缺失」
+        shutil.copyfile(ROOT / "tests" / "golden_seed.json",
+                        self.root / "tests" / "golden_seed.json")
 
     def test_clean_repo_passes(self):
         self.assertEqual(gate.run(self.root), [])
@@ -218,9 +221,26 @@ class TestGateEndToEnd(unittest.TestCase):
         (self.root / "src" / "broken.py").write_text("def oops(\n", encoding="utf-8")
         assert_hit(self, gate.run(self.root), "R0", "src/broken.py")
 
+    def test_r7_golden_snapshot_tamper_is_reported(self):
+        """G1：改快照把测试「修绿」必须先撞墙（不变量 #5 / ADR-001）。"""
+        path = self.root / "tests" / "golden_seed.json"
+        path.write_bytes(path.read_bytes() + b"\n")
+        assert_hit(self, gate.run(self.root), "R7", "golden_seed.json")
+
+    def test_r7_missing_golden_snapshot_is_reported(self):
+        (self.root / "tests" / "golden_seed.json").unlink()
+        assert_hit(self, gate.run(self.root), "R7", "golden_seed.json")
+
+    def test_r7_crlf_snapshot_is_accepted(self):
+        """行尾归一化：Windows 检出为 CRLF 时不得误报快照变更。"""
+        path = self.root / "tests" / "golden_seed.json"
+        path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+        out = gate.run(self.root)
+        self.assertFalse(any(v.startswith("[R7 ") for v in out), out)
+
     def test_tests_dir_is_not_production_scanned(self):
         d = self.root / "tests"
-        d.mkdir()
+        d.mkdir(exist_ok=True)
         (d / "fixture.py").write_text("import random\n", encoding="utf-8")
         out = gate.run(self.root)
         self.assertFalse(any("tests/fixture.py" in v for v in out), out)
