@@ -38,13 +38,16 @@ python tools/balance_check.py       # G2 平衡采样：20 万次动作，输出
 
 - 本地仓库：分支 `main`；远端 `origin → https://github.com/JJCurrry/PokeWorld.git`。
 - 2026-11-14 人裁定：**授权 AI 直接推送 GitHub**，AI 负责提交与项目更新（本条即 A5 的变更落单）。
-- 本机代理对 `github.com` 主域返回 `CONNECT tunnel failed, 502`；推送需**绕过代理环境变量**直连：
+- **推送优先直接 `git push origin main`**（2026-11-14 实测成功）。本机代理对 `github.com` 主域曾返回 `CONNECT tunnel failed, 502`；仅当直连遇 502 时，再尝试绕过代理环境变量：
 
 ```bash
+git push origin main
+# 仅当直连 502 时：
 env -u HTTPS_PROXY -u https_proxy -u HTTP_PROXY -u http_proxy -u ALL_PROXY git push origin main
 ```
 
-- 凭据由本机 Git Credential Manager 提供（`JJCurrry`），无需在仓库中存放 token。
+- **无论用哪种方式，推送后必须 `git ls-remote origin HEAD` 核对**：曾出现绕代理命令 exit 0 却静默未更新 `origin/main` 的假成功，只看退出码会误判。
+- 凭据由本机 Git Credential Manager 提供（`JJCurrry`），无需在仓库中存放 token；GCM 的 `... store: No such file or directory` 警告不影响推送，可忽略。
 
 ## 协作规范
 
