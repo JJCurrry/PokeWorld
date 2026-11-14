@@ -1,12 +1,12 @@
 # PokeWorld
 
-> 原创精灵收集 + 种子化群岛探索游戏，同时作为 AI Coding 门控式自治的演练项目。
-> 游戏内标题：**潮屿图鉴 / Tide Atlas**。仓库名 `PokeWorld` 仅作工程代号，名称商标风险见 `docs/GDD-v0.md`。
+> 原创生物收集 + 种子化群岛探索游戏，同时作为 AI Coding 门控式自治的演练项目。
+> 游戏内标题：**PokeWorld**（2026-11-14 门控裁定沿用仓库名；名称商标高风险已知并接受，见 `docs/GDD-v0.md` 第 6、7 节）。
 
 ## 当前状态
 
-七步工作循环的**第 3 步（计划）**，等待第 4 步门控评审。
-仓库内**尚无任何业务代码**——按「计划只出计划，不写一行代码」与「四道门先行」，G0 才点亮验证墙。
+G0 验证墙已于 2026-11-14 经冷眼评审「不通过」后完成 **G0-R 返工**，四道门全绿。
+**当前进度以 `docs/接力文件.md` 为唯一事实源**；玩法功能从 G1 开始。
 
 ## 目录结构
 
@@ -14,22 +14,31 @@
 
 ## 快速开始
 
-当前阶段无运行命令。G0 交付后，单命令验证墙：
+零第三方依赖，Python 3.13 标准库即可：
 
 ```bash
-python tools/verify_all.py
+python tools/verify_all.py          # 四道门：规则 → 编译 → 测试 → 数据可加载
+python -m unittest discover -s tests -v
+python tools/gate.py                # 只看静态规则门
 ```
+
+`ALL GATES GREEN` 才算通过。`verify_all.py` **拒绝在优化模式运行**（`python -O` / `PYTHONOPTIMIZE`）；
+第 0 道前置自检会在 `-O` 子进程投毒并直接验证两条拦截分支，与被跳过的用例等价。
+其余入口（`gate.py` / `unittest`）因生产代码零 `assert`，在 `-O` 下仍有效，但不作为门的凭据。
 
 ## Git 与远端
 
-- 本地仓库：分支 `main`；远端 `origin → https://github.com/JJCurrry/PokeWorld.git`（已配置，探测为空仓库）
-- 按项目所有者习惯，**推送由本人在本机终端执行**，AI 不代推：
+- 本地仓库：分支 `main`；远端 `origin → https://github.com/JJCurrry/PokeWorld.git`。
+- 2026-11-14 人裁定：**授权 AI 直接推送 GitHub**，AI 负责提交与项目更新（本条即 A5 的变更落单）。
+- 本机代理对 `github.com` 主域返回 `CONNECT tunnel failed, 502`；推送需**绕过代理环境变量**直连：
 
 ```bash
-git push -u origin main
+env -u HTTPS_PROXY -u https_proxy -u HTTP_PROXY -u http_proxy -u ALL_PROXY git push origin main
 ```
+
+- 凭据由本机 Git Credential Manager 提供（`JJCurrry`），无需在仓库中存放 token。
 
 ## 协作规范
 
 按 `ai-coding-method` 的「1 人独立开发」裁剪基准运作：制品七件套齐备、宪法六条不裁（验收先行 / 小步提交 / 接力有棒 / 修复有规 / 熔断有线 / 变更落单）。
-一次一个里程碑、一次提交、diff ≤ 400 行，每个里程碑结束更新 `docs/接力文件.md`。
+一次一个里程碑、分笔提交每笔 ≤5 文件且 diff ≤400 行，每个里程碑结束更新 `docs/接力文件.md`。
