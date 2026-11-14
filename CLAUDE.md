@@ -11,6 +11,7 @@
 ## 常用命令
 
 - `python tools/verify_all.py` —— 单命令四道门（含第 0 道优化模式自检）。
+- `python tools/balance_check.py` —— G2 平衡采样，输出机器事实；手感归人。
 - G1 起：`tests/golden_seed.json` 由 R7 锁定；变更须人确认后才运行 `python tools/make_golden.py`。
 - 细节以 `docs/地图.md`「关键流程入口」为准；本文件不复制命令细节。
 
@@ -36,7 +37,7 @@
 - 跨会话交接棒：`docs/接力文件.md`
 - 整体里程碑拆解（当前计划）：`docs/任务架构细分.md`
 - 游戏设计 / 原创溯源 / 合规自评：`docs/GDD-v0.md`
-- 参考实现 / 黄金路径：G0 计划铸造 `src/schema.py` + `tools/gate.py`；**未落盘前不得假称其存在**。
+- 参考实现 / 黄金路径：G0 铸造 `src/schema.py` + `tools/gate.py`，G1 铸造 `src/gen/`，G2 铸造 `src/battle/`；清单见 `docs/地图.md`，**未落盘的模块不得假称其存在**。
 
 ## 仲裁序（信息源冲突时谁先读）
 

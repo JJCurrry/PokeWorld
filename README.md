@@ -5,9 +5,10 @@
 
 ## 当前状态
 
-G0 验证墙于 2026-11-14 完成 **G0-R 返工**；同日人裁决 **G0 验收通过**并授权进入 G1。
-**G1 区块生成器已实现**：确定性 `rng(world_seed, region_id, cx, cy)`、8×8 区块地形与遭遇相对权重、golden seed 快照与规则门 R7，**53 用例全绿**；G1 里程碑验收仍归人裁决，G2 未开始。
-**当前进度以 `docs/接力文件.md` 为唯一事实源**。
+2026-11-14 人裁决 **G0 / G1 均验收通过**并授权进入 G2。
+**G1**：确定性 `rng(world_seed, region_id, cx, cy)`、8×8 区块地形与遭遇相对权重、golden seed 快照（G1-v2）与规则门 R7。
+**G2 已实现（待人验收）**：`step(state, action, rng) -> state'` 纯函数状态转移（遭遇 / 攻击 / 捕捉 / 撤离）、不可变规则快照、10 万次捕捉 + 10 万次遭遇采样、机器事实报告 `docs/平衡采样报告.md`，**92 用例全绿**。
+G2 里程碑验收仍归人裁决，G3 未开始。**当前进度以 `docs/接力文件.md` 为唯一事实源**。
 
 ## 目录结构
 
@@ -21,11 +22,13 @@ G0 验证墙于 2026-11-14 完成 **G0-R 返工**；同日人裁决 **G0 验收�
 python tools/verify_all.py          # 四道门：规则 → 编译 → 测试 → 数据可加载
 python -m unittest discover -s tests -v
 python tools/gate.py                # 只看静态规则门 R0–R7
+python tools/balance_check.py       # G2 平衡采样：20 万次动作，输出机器事实 JSON
 ```
 
-G1 的 `tests/golden_seed.json` 由规则门 R7 锁定哈希：**不要直接改快照**。
+`tests/golden_seed.json`（当前 **G1-v2**，SHA256 `d18d1b85…`）由规则门 R7 锁定：**不要直接改快照**。
 仅当生成器或快照变更且**经人确认**后，才运行 `python tools/make_golden.py` 重建，
-再把打印出的 SHA256 登记到 `tools/gate.py::GOLDEN_SNAPSHOT_SHA256` 并在 G1 工单变更记录留痕。
+再把打印出的 SHA256 登记到 `tools/gate.py::GOLDEN_SNAPSHOT_SHA256` 并在工单变更记录留下新旧哈希。
+平衡手感、A11 数值定稿与 G2-01 伤害公式归人；`docs/平衡采样报告.md` 只归档机器事实。
 
 `ALL GATES GREEN` 才算通过。`verify_all.py` **拒绝在优化模式运行**（`python -O` / `PYTHONOPTIMIZE`）；
 第 0 道前置自检会在 `-O` 子进程投毒并直接验证两条拦截分支，与被跳过的用例等价。
