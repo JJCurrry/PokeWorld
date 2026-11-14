@@ -10,8 +10,8 @@
 
 ## 常用命令
 
-- 当前阶段（门控前）：无运行命令。
-- G0 起：`python tools/verify_all.py` —— 单命令四道门（规则 / 编译 / 测试 / 数据可加载）。
+- `python tools/verify_all.py` —— 单命令四道门（含第 0 道优化模式自检）。
+- G1 起：`tests/golden_seed.json` 由 R7 锁定；变更须人确认后才运行 `python tools/make_golden.py`。
 - 细节以 `docs/地图.md`「关键流程入口」为准；本文件不复制命令细节。
 
 ## 判断性原则（仅放无法自动化的；能写成检查的请下沉为 L1）
