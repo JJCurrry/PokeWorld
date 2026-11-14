@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "generator_version": "G1-v1",
+  "chunk_size": 8,
+  "note": "由 tools/make_golden.py 重建；变更须人确认（不变量 #5 / ADR-001）",
+  "cases": [
+    {
+      "world_seed": "golden-a",
+      "region": "r1",
+      "cx": 0,
+      "cy": 0,
+      "tiles": "sWsGsgGgsGgGsWWGGWGGsssgsgsWgsgGggWssGgssggsggWgsGWGgsggsgGWGggG",
+      "terrain_counts": {
+        "grass": 21,
+        "deep_grass": 15,
+        "shoal": 19,
+        "deep_water": 9
+      },
+      "weights": {
+        "day": {
+          "c01": 0.32025,
+          "c02": 0.25925
+        },
+        "night": {
+          "c01": 0.2562,
+          "c02": 0.2074
+        }
+      }
+    },
+    {
+      "world_seed": "golden-a",
+      "region": "r1",
+      "cx": 3,
+      "cy": 3,
+      "tiles": "ggWWggsGggGGsgGWgGsggsgWsssgsssgggssssGggsgGgGggggGggggggGgGGGgs",
+      "terrain_counts": {
+        "grass": 31,
+        "deep_grass": 13,
+        "shoal": 16,
+        "deep_water": 4
+      },
+      "weights": {
+        "day": {
+          "c01": 0.349125,
+          "c02": 0.282625
+        },
+        "night": {
+          "c01": 0.2793,
+          "c02": 0.2261
+        }
+      }
+    },
+    {
+      "world_seed": "golden-a",
+      "region": "r3",
+      "cx": 1,
+      "cy": 2,
+      "tiles": "WgssWGgGgGgGggssgGgssgssGgWgssGWssgsGsgsgssWgGGWGsGgWGGGgggsWggs",
+      "terrain_counts": {
+        "grass": 21,
+        "deep_grass": 15,
+        "shoal": 20,
+        "deep_water": 8
+      },
+      "weights": {
+        "day": {
+          "c04": 0.27675,
+          "c05": 0.230625
+        },
+        "night": {
+          "c04": 0.2214,
+          "c05": 0.1845
+        }
+      }
+    },
+    {
+      "world_seed": "golden-a",
+      "region": "r7",
+      "cx": 1,
+      "cy": 1,
+      "tiles": "GsssssWGGssgGWWWgsWGsWssggssWWGgsWGGggGgsggWGsgsgWsWGgssWssGgWGg",
+      "terrain_counts": {
+        "grass": 15,
+        "deep_grass": 13,
+        "shoal": 22,
+        "deep_water": 14
+      },
+      "weights": {
+        "day": {},
+        "night": {}
+      }
+    },
+    {
+      "world_seed": "golden-b",
+      "region": "r1",
+      "cx": 0,
+      "cy": 0,
+      "tiles": "GsgsGWgGgsGgGWggggWGGggGsGGGgsgsssWggsgsWWGGgGssssWWggsWsWGgWsgG",
+      "terrain_counts": {
+        "grass": 20,
+        "deep_grass": 16,
+        "shoal": 17,
+        "deep_water": 11
+      },
+      "weights": {
+        "day": {
+          "c01": 0.312375,
+          "c02": 0.252875
+        },
+        "night": {
+          "c01": 0.2499,
+          "c02": 0.2023
+        }
+      }
+    },
+    {
+      "world_seed": "golden-b",
+      "region": "r5",
+      "cx": 2,
+      "cy": 1,
+      "tiles": "gWggGggsgggsGGgsWgggGWgsggsGgGGgssGGggWWsgGWgGsGsgGggssGgssgGsgg",
+      "terrain_counts": {
+        "grass": 28,
+        "deep_grass": 15,
+        "shoal": 15,
+        "deep_water": 6
+      },
+      "weights": {
+        "day": {
+          "c02": 0.273062,
+          "c07": 0.257
+        },
+        "night": {
+          "c02": 0.21845,
+          "c07": 0.2056
+        }
+      }
+    },
+    {
+      "world_seed": 20261114,
+      "region": "r2",
+      "cx": 0,
+      "cy": 3,
+      "tiles": "sWGgGsgGssggsgWggWgWGggGgWgWGGgsgsWGGGggsssWGsWssgGWWsGgsWsGgssW",
+      "terrain_counts": {
+        "grass": 19,
+        "deep_grass": 14,
+        "shoal": 18,
+        "deep_water": 13
+      },
+      "weights": {
+        "day": {
+          "c01": 0.308437,
+          "c03": 0.29375
+        },
+        "night": {
+          "c01": 0.24675,
+          "c03": 0.235
+        }
+      }
+    },
+    {
+      "world_seed": "golden-b",
+      "region": "r7",
+      "cx": 0,
+      "cy": 0,
+      "tiles": "WWsGGsgGGggggWsWsssGggsWgsggsGgsgsGggsGsgGsGsgsgGggGgGgGWggGGGWg",
+      "terrain_counts": {
+        "grass": 24,
+        "deep_grass": 17,
+        "shoal": 16,
+        "deep_water": 7
+      },
+      "weights": {
+        "day": {},
+        "night": {}
+      }
+    }
+  ]
+}
