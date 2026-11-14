@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "title": "PokeWorld",
+  "assumptions": [
+    {"id": "ASSUMPTION-A10", "scope": "regions[].name / regions[].landmark / edges 解锁顺序", "status": "AI 结构占位，最终裁定归人；MANIFEST 锁的是当前占位快照"},
+    {"id": "ASSUMPTION-A11", "scope": "三张表中的全部数值", "status": "契约验证用占位，非最终平衡值"}
+  ],
+  "start": "r1",
+  "abilities": ["rock_smash", "surf", "strength", "league_pass"],
+  "regions": [
+    {"id": "r1", "name": "汐湾镇", "landmark": "起始镇", "chunks": [4, 4], "pool": ["c01", "c02"]},
+    {"id": "r2", "name": "青草原", "landmark": "草之道馆", "chunks": [4, 4], "pool": ["c01", "c03"]},
+    {"id": "r3", "name": "回声洞", "landmark": "碎岩试炼", "chunks": [4, 4], "pool": ["c04", "c05"]},
+    {"id": "r4", "name": "灯塔港", "landmark": "补给站", "chunks": [4, 4], "pool": ["c02", "c06"]},
+    {"id": "r5", "name": "碎浪群", "landmark": "沉船", "chunks": [4, 4], "pool": ["c02", "c07"]},
+    {"id": "r6", "name": "灰火岛", "landmark": "焰之道馆", "chunks": [4, 4], "pool": ["c05", "c08"]},
+    {"id": "r7", "name": "联盟", "landmark": "终局", "chunks": [2, 2], "pool": []}
+  ],
+  "edges": [
+    {"from": "r1", "to": "r2", "requires": []},
+    {"from": "r2", "to": "r3", "requires": ["rock_smash"]},
+    {"from": "r3", "to": "r4", "requires": []},
+    {"from": "r4", "to": "r5", "requires": ["surf"]},
+    {"from": "r5", "to": "r6", "requires": ["strength"]},
+    {"from": "r6", "to": "r7", "requires": ["league_pass"]}
+  ]
+}

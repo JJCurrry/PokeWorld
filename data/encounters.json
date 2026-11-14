@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "assumptions": ["ASSUMPTION-A11"],
+  "type_chart": {
+    "tide":    {"tide": 1, "rock": 2, "forest": 0.5, "flame": 2, "thunder": 1, "frost": 1},
+    "rock":    {"tide": 0.5, "rock": 1, "forest": 1, "flame": 2, "thunder": 1, "frost": 1},
+    "forest":  {"tide": 2, "rock": 2, "forest": 1, "flame": 0.5, "thunder": 1, "frost": 1},
+    "flame":   {"tide": 0.5, "rock": 0.5, "forest": 2, "flame": 1, "thunder": 1, "frost": 2},
+    "thunder": {"tide": 2, "rock": 1, "forest": 0.5, "flame": 1, "thunder": 1, "frost": 1},
+    "frost":   {"tide": 1, "rock": 1, "forest": 2, "flame": 0.5, "thunder": 1, "frost": 1}
+  },
+  "terrain": ["grass", "deep_grass", "shoal", "deep_water"],
+  "terrain_weight": {"grass": 1.0, "deep_grass": 0.6, "shoal": 0.8, "deep_water": 0.4},
+  "time_weight": {"day": 1.0, "night": 0.8},
+  "catch_formula": {"min": 0.02, "max": 0.95, "ball_bonus": 1.0, "status_bonus": 1.5}
+}
