@@ -1,7 +1,8 @@
 """重建 golden seed 快照（G1 · **人确认后方可运行**）。
 
 不变量 #5 / ADR-001 §后果：生成器或快照变更须人确认，禁止 AI 顺手更新
-快照把测试「修绿」。人确认后的操作路径：
+快照把测试「修绿」。G1-v1 → G1-v2 的口径变更由 2026-11-14 17:56 人裁决
+（S-02 拆通道）确认，记录见 `docs/工单/G1-区块生成器.md`。人确认后的操作路径：
   1. 在 `docs/工单/G1-区块生成器.md`「变更记录」写明人确认结论；
   2. `python tools/make_golden.py` 重建 `tests/golden_seed.json`；
   3. 把打印出的 SHA256 登记到 `tools/gate.py::GOLDEN_SNAPSHOT_SHA256`；
@@ -22,7 +23,7 @@ from src import schema  # noqa: E402
 from src.gen import CHUNK_SIZE, encode_tiles, generate_chunk  # noqa: E402
 
 SNAPSHOT_PATH = ROOT / "tests" / "golden_seed.json"
-GENERATOR_VERSION = "G1-v1"
+GENERATOR_VERSION = "G1-v2"  # 人裁决 S-02 后：遭遇权重不含捕捉难度
 
 # 覆盖：多世界种子、多区域、多坐标、字符串 / 整数种子、空 pool 的边界区域。
 CASES = (
@@ -55,7 +56,8 @@ def build(tables: dict) -> dict:
         "schema_version": 1,
         "generator_version": GENERATOR_VERSION,
         "chunk_size": CHUNK_SIZE,
-        "note": "由 tools/make_golden.py 重建；变更须人确认（不变量 #5 / ADR-001）",
+        "weights_kind": "relative_terrain_time_only",
+        "note": "由 tools/make_golden.py 重建；变更须人确认（不变量 #5 / ADR-001）；G1-v2 起权重不含捕捉难度",
         "cases": cases,
     }
 

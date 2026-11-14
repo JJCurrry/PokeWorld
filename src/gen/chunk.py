@@ -1,10 +1,12 @@
-"""区块生成（G1 DoD）：地形格 + 遭遇相对权重，纯函数、可快照。
+"""区块生成（G1 · 2026-11-14 人裁决 S-02 拆通道后）：地形格 + 遭遇相对权重。
 
 不变量 #1：随机只来自 rng(world_seed, region_id, cx, cy)。
-不变量 #5：同参逐格一致，golden seed 快照锁定。
+不变量 #5：同参逐格一致，golden seed 快照锁定（G1-v2 起口径见下）。
 不变量 #6：生成结果不入库，由种子重建。
-A11：terrain_weight / time_weight / base_catch 是人裁定沿用的占位值，
-本模块产出的权重是供 G2 消费的**相对量**，不是最终平衡定稿。
+人裁决 S-02：遭遇权重只由「区块地形均值 × 时段权重」构成，**不乘捕捉难度**，
+回归 docs/GDD-v0.md §4 `w = terrain_weight × time_weight × region_pool`；
+捕捉难度只进 G2 的捕捉公式。A11 数值仍为人裁定沿用的占位值。
+产出的权重是供 G2 按 wᵢ/Σw 加权抽样消费的**相对量**，不是概率、不是最终平衡定稿。
 """
 from __future__ import annotations
 
@@ -66,14 +68,13 @@ def generate_chunk(tables: dict, world_seed: str | int, region_id: str,
     terrain_mean = sum(float(terrain_weight[name]) * count
                        for name, count in counts.items()) / cell_count
     pool = view.pool(region_id)
-    species = {cid: view.creature(cid) for cid in pool}
 
+    # 人裁决 S-02：权重只由区块地形与时段决定；同 pool 内各物种权重相同，
+    # 捕捉难度不参与遭遇，避免「越好抓越常遇到」的耦合。
     encounter = {}
     for phase, phase_weight in view.time_weight().items():
-        encounter[phase] = {
-            cid: round(float(creature["base_catch"]) * float(phase_weight) * terrain_mean, 6)
-            for cid, creature in species.items()
-        }
+        weight = round(float(phase_weight) * terrain_mean, 6)
+        encounter[phase] = {cid: weight for cid in pool}
 
     return {
         "region": region_id,

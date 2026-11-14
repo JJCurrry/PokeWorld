@@ -33,7 +33,8 @@ class TestGoldenSeed(unittest.TestCase):
 
     def test_snapshot_header(self):
         self.assertEqual(self.snapshot["schema_version"], 1)
-        self.assertEqual(self.snapshot["generator_version"], "G1-v1")
+        self.assertEqual(self.snapshot["generator_version"], "G1-v2")
+        self.assertEqual(self.snapshot["weights_kind"], "relative_terrain_time_only")
         self.assertEqual(self.snapshot["chunk_size"], CHUNK_SIZE)
         self.assertGreaterEqual(len(self.snapshot["cases"]), 8)
 
@@ -133,6 +134,29 @@ class TestPurityAndBounds(unittest.TestCase):
                          CHUNK_SIZE * CHUNK_SIZE)
         self.assertEqual(set(chunk["terrain_counts"]),
                          set(self.tables["encounters.json"]["terrain"]))
+
+    def test_weights_exclude_catch_rate(self):
+        """人裁决 S-02 回归锁：改捕捉难度不得影响遭遇权重。"""
+        altered = copy.deepcopy(self.tables)
+        for creature in altered["species.json"]["creatures"]:
+            creature["base_catch"] = 0.99
+        a = generate_chunk(self.tables, "golden-a", "r1", 0, 0)
+        b = generate_chunk(altered, "golden-a", "r1", 0, 0)
+        self.assertEqual(a["encounter_weights"], b["encounter_weights"])
+
+    def test_weights_equal_terrain_mean_times_phase(self):
+        """权重 = 区块地形权重均值 × 时段权重；同 pool 内各物种相同。"""
+        chunk = generate_chunk(self.tables, "golden-a", "r1", 0, 0)
+        regions = self.tables["topology.json"]["regions"]
+        pool = next(r["pool"] for r in regions if r["id"] == "r1")
+        terrain_weight = self.tables["encounters.json"]["terrain_weight"]
+        time_weight = self.tables["encounters.json"]["time_weight"]
+        mean = sum(terrain_weight[k] * v for k, v in chunk["terrain_counts"].items()) \
+            / (CHUNK_SIZE * CHUNK_SIZE)
+        for phase, weights in chunk["encounter_weights"].items():
+            self.assertEqual(set(weights), set(pool))
+            self.assertEqual(set(weights.values()),
+                             {round(mean * time_weight[phase], 6)})
 
 
 if __name__ == "__main__":

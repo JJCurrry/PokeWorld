@@ -52,7 +52,10 @@ PROVENANCE_ROW = re.compile(r"^\|\s*潮灵\s*`?(c\d+)`?\s+(\S+?)\s*\|", re.MULTI
 # R7：golden seed 快照哈希由人确认后登记于此（不变量 #5 / ADR-001 §后果）。
 # 改快照必须同时改本常量并在 G1 工单变更记录留痕，禁止 AI 顺手更新快照把测试「修绿」。
 GOLDEN_SNAPSHOT_PATH = "tests/golden_seed.json"
-GOLDEN_SNAPSHOT_SHA256 = "c2dbd94dc16e237a7de9af7ba8af75f9167f602715f97c3fe7fa3baf652605d6"
+# G1-v2 快照变更（2026-11-14 17:56 人裁决 S-02 拆通道，确认记录见 G1 工单「人裁决记录」）：
+# 旧 c2dbd94dc16e237a7de9af7ba8af75f9167f602715f97c3fe7fa3baf652605d6
+# 新 d18d1b85fb0d557ccbe8dcb7bad42d8cd1d071d9e9f3c6fcf84d3e548b9ca454
+GOLDEN_SNAPSHOT_SHA256 = "d18d1b85fb0d557ccbe8dcb7bad42d8cd1d071d9e9f3c6fcf84d3e548b9ca454"
 
 
 def violation(rule: str, where: str, hint: str) -> str:
