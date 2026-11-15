@@ -38,6 +38,21 @@ MUTATIONS = (
     ("species.json", lambda d: d["creatures"].append(dict(d["creatures"][0])), "潮灵 id 重复"),
     ("encounters.json", lambda d: d["type_chart"].pop("frost"), "克制矩阵必须覆盖全部 6 系"),
     ("encounters.json", lambda d: d["terrain_weight"].pop("grass"), "地形与权重不一致"),
+    # G2 返工（ADR-002）：新增受保护字段的畸形数据注入
+    ("species.json", lambda d: d["creatures"][0].pop("rarity"), "rarity 必须为"),
+    ("species.json", lambda d: d["creatures"][0].update(rarity=1.5), "rarity 必须为"),
+    ("encounters.json", lambda d: d.pop("damage_formula"), "damage_formula.atk_scale 必须为正数"),
+    ("encounters.json", lambda d: d.pop("items"), "items 必须是非空字典"),
+    ("encounters.json", lambda d: d.pop("statuses"), "statuses 必须是非空字典"),
+    ("encounters.json", lambda d: d.pop("flee"), "flee.base_rate 必须为数值"),
+    ("encounters.json", lambda d: d["catch_formula"].update(min=0.9, max=0.1),
+     "catch_formula.min/max"),
+    ("encounters.json", lambda d: d["items"]["bell_calm"].update(status="ghost"),
+     "引用了未登记状态"),
+    ("encounters.json", lambda d: d["items"]["net_tide"].update(catch_bonus=-1.0),
+     "catch_bonus 必须为正数"),
+    ("encounters.json", lambda d: d["statuses"]["numb"].update(counter_rate=2.0),
+     "counter_rate 必须在 [0,1]"),
 )
 
 
@@ -68,6 +83,21 @@ class TestIndependentParse(unittest.TestCase):
     def test_tables_load_through_schema(self):
         tables = schema.load_all(ROOT)
         self.assertEqual(set(tables), set(schema.PROTECTED))
+
+    def test_g2_rework_fields_are_present(self):
+        """独立解析核对 ADR-002 新增字段，且单值 bonus 已退场。"""
+        species = read_json("species.json")
+        encounters = read_json("encounters.json")
+        for creature in species["creatures"]:
+            with self.subTest(cid=creature["id"]):
+                self.assertIn("rarity", creature)
+                self.assertGreater(creature["rarity"], 0)
+        for key in ("damage_formula", "items", "statuses", "flee", "catch_formula"):
+            self.assertIn(key, encounters)
+        self.assertNotIn("ball_bonus", encounters["catch_formula"])
+        self.assertNotIn("status_bonus", encounters["catch_formula"])
+        for item in encounters["items"].values():
+            self.assertIn(item["kind"], ("ball", "status"))
 
     def test_manifest_matches_tables(self):
         schema.verify_manifest(ROOT)

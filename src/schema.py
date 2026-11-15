@@ -25,6 +25,15 @@ def must(condition: object, message: str) -> None:
         raise SchemaError(message)
 
 
+def _is_number(value: object) -> bool:
+    """严格数值判定：bool 是 int 子类，不得冒充平衡常数。"""
+    return type(value) in (int, float)
+
+
+def _is_int(value: object) -> bool:
+    return type(value) is int
+
+
 def root_of(path: str | Path | None = None) -> Path:
     return Path(path) if path is not None else Path(__file__).resolve().parents[1]
 
@@ -75,6 +84,9 @@ def validate_species(d: dict) -> None:
         must(len(c["base"]) == BASE_LEN and all(isinstance(x, int) for x in c["base"]),
              f"base 必须是 {BASE_LEN} 个整数: {c['id']}")
         must(0 < c["base_catch"] <= 1, f"base_catch 越界: {c['id']}")
+        # G2 返工：出没稀有度是物种固有系数，与捕捉难度 base_catch 正交。
+        must(_is_number(c.get("rarity")) and 0 < c["rarity"] <= 1,
+             f"rarity 必须为 (0,1] 内的数值: {c['id']}")
 
 
 def validate_encounters(d: dict) -> None:
@@ -84,6 +96,55 @@ def validate_encounters(d: dict) -> None:
     for row in chart.values():
         must(set(row) == set(TYPES), "克制矩阵必须是 6x6 方阵")
     must(set(d.get("terrain", [])) == set(d.get("terrain_weight", {})), "地形与权重不一致")
+
+    # G2 返工（ADR-002）：结构常数全部入表，代码里不得再写死平衡数字。
+    catch = d.get("catch_formula", {})
+    must(_is_number(catch.get("min")) and _is_number(catch.get("max"))
+         and 0 <= catch["min"] <= catch["max"] <= 1,
+         "catch_formula.min/max 必须是 [0,1] 内的数值且 min <= max")
+
+    formula = d.get("damage_formula", {})
+    for key in ("atk_scale", "guard_scale", "min_damage"):
+        must(_is_number(formula.get(key)) and formula[key] > 0,
+             f"damage_formula.{key} 必须为正数")
+    must(_is_int(formula.get("min_damage")), "damage_formula.min_damage 必须为整数")
+
+    statuses = d.get("statuses", {})
+    must(isinstance(statuses, dict) and bool(statuses), "statuses 必须是非空字典")
+    for key, st in statuses.items():
+        must(isinstance(st, dict), f"statuses.{key} 必须是字典")
+        must(_is_number(st.get("catch_bonus")) and st["catch_bonus"] > 0,
+             f"statuses.{key}.catch_bonus 必须为正数")
+        must(_is_int(st.get("duration")) and st["duration"] > 0,
+             f"statuses.{key}.duration 必须为正整数")
+        must(_is_number(st.get("counter_rate")) and 0 <= st["counter_rate"] <= 1,
+             f"statuses.{key}.counter_rate 必须在 [0,1]")
+
+    items = d.get("items", {})
+    must(isinstance(items, dict) and bool(items), "items 必须是非空字典")
+    valid_items = [it for it in items.values() if isinstance(it, dict)]
+    must(any(it.get("kind") == "ball" for it in valid_items),
+         "items 至少需要一个 ball 类道具作为默认装备")
+    for key, it in items.items():
+        must(isinstance(it, dict), f"items.{key} 必须是字典")
+        must(it.get("kind") in ("ball", "status"),
+             f"items.{key}.kind 必须为 ball 或 status")
+        if it["kind"] == "ball":
+            must(_is_number(it.get("catch_bonus")) and it["catch_bonus"] > 0,
+                 f"items.{key}.catch_bonus 必须为正数")
+        else:
+            must(it.get("status") in statuses,
+                 f"items.{key}.status 引用了未登记状态")
+            must(_is_number(it.get("apply_rate")) and 0 < it["apply_rate"] <= 1,
+                 f"items.{key}.apply_rate 必须在 (0,1]")
+
+    flee = d.get("flee", {})
+    for key in ("base_rate", "agility_scale", "min", "max", "status_bonus"):
+        must(_is_number(flee.get(key)), f"flee.{key} 必须为数值")
+    must(0 <= flee["min"] <= flee["max"] <= 1,
+         "flee.min/max 必须在 [0,1] 且 min <= max")
+    must(0 <= flee["base_rate"] <= 1 and 0 <= flee["status_bonus"] <= 1,
+         "flee.base_rate / status_bonus 必须在 [0,1]")
 
 
 def load_all(root: str | Path | None = None) -> dict:
