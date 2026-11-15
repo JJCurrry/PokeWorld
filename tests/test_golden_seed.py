@@ -33,8 +33,8 @@ class TestGoldenSeed(unittest.TestCase):
 
     def test_snapshot_header(self):
         self.assertEqual(self.snapshot["schema_version"], 1)
-        self.assertEqual(self.snapshot["generator_version"], "G1-v2")
-        self.assertEqual(self.snapshot["weights_kind"], "relative_terrain_time_only")
+        self.assertEqual(self.snapshot["generator_version"], "G1-v3")
+        self.assertEqual(self.snapshot["weights_kind"], "relative_terrain_time_rarity")
         self.assertEqual(self.snapshot["chunk_size"], CHUNK_SIZE)
         self.assertGreaterEqual(len(self.snapshot["cases"]), 8)
 
@@ -144,19 +144,46 @@ class TestPurityAndBounds(unittest.TestCase):
         b = generate_chunk(altered, "golden-a", "r1", 0, 0)
         self.assertEqual(a["encounter_weights"], b["encounter_weights"])
 
-    def test_weights_equal_terrain_mean_times_phase(self):
-        """权重 = 区块地形权重均值 × 时段权重；同 pool 内各物种相同。"""
+    def test_weights_equal_terrain_mean_times_phase_times_rarity(self):
+        """ADR-002：权重 = 区块地形权重均值 × 时段权重 × species.rarity。
+
+        S-02 拆通道口径仍成立（不乘 base_catch），但同 pool 内不再均匀。
+        """
         chunk = generate_chunk(self.tables, "golden-a", "r1", 0, 0)
         regions = self.tables["topology.json"]["regions"]
         pool = next(r["pool"] for r in regions if r["id"] == "r1")
         terrain_weight = self.tables["encounters.json"]["terrain_weight"]
         time_weight = self.tables["encounters.json"]["time_weight"]
+        rarity = {c["id"]: c["rarity"]
+                  for c in self.tables["species.json"]["creatures"]}
         mean = sum(terrain_weight[k] * v for k, v in chunk["terrain_counts"].items()) \
             / (CHUNK_SIZE * CHUNK_SIZE)
         for phase, weights in chunk["encounter_weights"].items():
             self.assertEqual(set(weights), set(pool))
-            self.assertEqual(set(weights.values()),
-                             {round(mean * time_weight[phase], 6)})
+            for cid in pool:
+                self.assertAlmostEqual(
+                    weights[cid],
+                    round(mean * time_weight[phase] * rarity[cid], 6), places=6)
+        self.assertNotEqual(len(set(chunk["encounter_weights"]["day"].values())), 1)
+
+    def test_weights_include_rarity(self):
+        """改 rarity 会改变遭遇权重，但不改变地形格（稀有度是遭遇侧独立维度）。"""
+        altered = copy.deepcopy(self.tables)
+        for creature in altered["species.json"]["creatures"]:
+            creature["rarity"] = 0.5
+        a = generate_chunk(self.tables, "golden-a", "r1", 0, 0)
+        b = generate_chunk(altered, "golden-a", "r1", 0, 0)
+        self.assertNotEqual(a["encounter_weights"], b["encounter_weights"])
+        self.assertEqual(a["tiles"], b["tiles"])
+        self.assertEqual(a["terrain_counts"], b["terrain_counts"])
+
+    def test_missing_rarity_raises_value_error(self):
+        """pool 引用了没有 rarity 的潮灵时显式报错，不静默按 1.0 兜底。"""
+        altered = copy.deepcopy(self.tables)
+        altered["species.json"]["creatures"] = [
+            c for c in altered["species.json"]["creatures"] if c["id"] != "c01"]
+        with self.assertRaises(ValueError):
+            generate_chunk(altered, "golden-a", "r1", 0, 0)
 
 
 if __name__ == "__main__":

@@ -39,8 +39,24 @@ class TestPurity(unittest.TestCase):
         step(active, "attack", ctx)
         step(active, "catch", ctx)
         step(active, "flee", ctx)
+        bagged = new_state(self.tables, "r1", 0, 0, "day", "c01", self.weights,
+                           wild_id="c02", bag=("net_tide", "seal_frost"))
+        step(bagged, "item:net_tide", ctx)
+        step(bagged, "item:seal_frost", ctx)
         self.assertEqual(self.tables, before)
         self.assertEqual(self.weights, weights_before)
+
+    def test_bag_and_equipped_ball_are_not_mutated_in_place(self):
+        state = new_state(self.tables, "r1", 0, 0, "day", "c01", self.weights,
+                          wild_id="c02", bag=("net_tide", "seal_frost"))
+        before = copy.deepcopy(state)
+        ctx = RngContext("purity-test", "r1", 0, 0)
+        out = step(state, "item:net_tide", ctx)
+        self.assertEqual(state, before)
+        self.assertEqual(out.bag, ("seal_frost",))
+        self.assertEqual(out.equipped_ball, "net_tide")
+        with self.assertRaises(FrozenInstanceError):
+            out.bag = ()
 
     def test_state_is_frozen(self):
         state = new_state(self.tables, "r1", 0, 0, "day", "c01", self.weights)
