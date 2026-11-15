@@ -1,9 +1,15 @@
 """重建 golden seed 快照（G1 · **人确认后方可运行**）。
 
 不变量 #5 / ADR-001 §后果：生成器或快照变更须人确认，禁止 AI 顺手更新
-快照把测试「修绿」。G1-v1 → G1-v2 的口径变更由 2026-11-14 17:56 人裁决
-（S-02 拆通道）确认，记录见 `docs/工单/G1-区块生成器.md`。人确认后的操作路径：
-  1. 在 `docs/工单/G1-区块生成器.md`「变更记录」写明人确认结论；
+快照把测试「修绿」。两次口径变更的人确认来源：
+- G1-v1 → G1-v2：2026-11-14 17:56 人裁决 S-02 拆通道，记录见
+  `docs/工单/G1-区块生成器.md`「人裁决记录 / 变更记录」。
+- G1-v2 → G1-v3：2026-11-14 22:24 人裁决「需要稀有度差异」+
+  2026-11-15 人答复「同意」（明确授权改受保护表与重拍快照），记录见
+  `docs/工单/G2-遭遇捕捉战斗.md`「人裁决记录（2026-11-15 · 第三次）」；
+  设计见 `docs/adr/ADR-002-战斗数值与出没稀有度建模.md` §3。
+人确认后的操作路径：
+  1. 在对应工单写明人确认结论；
   2. `python tools/make_golden.py` 重建 `tests/golden_seed.json`；
   3. 把打印出的 SHA256 登记到 `tools/gate.py::GOLDEN_SNAPSHOT_SHA256`；
   4. `python tools/verify_all.py` 全绿，并把新旧哈希一并留在工单变更记录里。
@@ -23,7 +29,8 @@ from src import schema  # noqa: E402
 from src.gen import CHUNK_SIZE, encode_tiles, generate_chunk  # noqa: E402
 
 SNAPSHOT_PATH = ROOT / "tests" / "golden_seed.json"
-GENERATOR_VERSION = "G1-v2"  # 人裁决 S-02 后：遭遇权重不含捕捉难度
+GENERATOR_VERSION = "G1-v3"  # ADR-002 后：遭遇权重 = 地形均值 × 时段 × rarity（仍不含捕捉难度）
+WEIGHTS_KIND = "relative_terrain_time_rarity"
 
 # 覆盖：多世界种子、多区域、多坐标、字符串 / 整数种子、空 pool 的边界区域。
 CASES = (
@@ -56,8 +63,8 @@ def build(tables: dict) -> dict:
         "schema_version": 1,
         "generator_version": GENERATOR_VERSION,
         "chunk_size": CHUNK_SIZE,
-        "weights_kind": "relative_terrain_time_only",
-        "note": "由 tools/make_golden.py 重建；变更须人确认（不变量 #5 / ADR-001）；G1-v2 起权重不含捕捉难度",
+        "weights_kind": WEIGHTS_KIND,
+        "note": "由 tools/make_golden.py 重建；变更须人确认（不变量 #5 / ADR-001）；G1-v2 起权重不含捕捉难度，G1-v3 起再乘 species.rarity",
         "cases": cases,
     }
 

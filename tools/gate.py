@@ -52,10 +52,15 @@ PROVENANCE_ROW = re.compile(r"^\|\s*潮灵\s*`?(c\d+)`?\s+(\S+?)\s*\|", re.MULTI
 # R7：golden seed 快照哈希由人确认后登记于此（不变量 #5 / ADR-001 §后果）。
 # 改快照必须同时改本常量并在 G1 工单变更记录留痕，禁止 AI 顺手更新快照把测试「修绿」。
 GOLDEN_SNAPSHOT_PATH = "tests/golden_seed.json"
-# G1-v2 快照变更（2026-11-14 17:56 人裁决 S-02 拆通道，确认记录见 G1 工单「人裁决记录」）：
+# G1-v1 → G1-v2（2026-11-14 17:56 人裁决 S-02 拆通道，确认记录见 G1 工单「人裁决记录」）：
 # 旧 c2dbd94dc16e237a7de9af7ba8af75f9167f602715f97c3fe7fa3baf652605d6
 # 新 d18d1b85fb0d557ccbe8dcb7bad42d8cd1d071d9e9f3c6fcf84d3e548b9ca454
-GOLDEN_SNAPSHOT_SHA256 = "d18d1b85fb0d557ccbe8dcb7bad42d8cd1d071d9e9f3c6fcf84d3e548b9ca454"
+# G1-v2 → G1-v3（2026-11-14 22:24 人裁决「需要稀有度差异」+ 2026-11-15 人答复「同意」
+#   明确授权改受保护表与重拍快照；确认记录见 G2 工单「人裁决记录（2026-11-15 · 第三次）」，
+#   设计见 ADR-002 §3）：权重再乘 species.rarity，地形格逐格未变。
+# 旧 d18d1b85fb0d557ccbe8dcb7bad42d8cd1d071d9e9f3c6fcf84d3e548b9ca454
+# 新 3ab574e49bfbabaa3b5dcfe5e30cce49ad3bb7c979e2887f7e91e5348094c2d3
+GOLDEN_SNAPSHOT_SHA256 = "3ab574e49bfbabaa3b5dcfe5e30cce49ad3bb7c979e2887f7e91e5348094c2d3"
 
 
 def violation(rule: str, where: str, hint: str) -> str:

@@ -58,3 +58,8 @@ class Topology:
             if creature["id"] == creature_id:
                 return creature
         raise ValueError(f"未登记潮灵：{creature_id}")
+
+    def rarity(self) -> dict[str, float]:
+        """物种固有出没系数（ADR-002）；与捕捉难度 base_catch 正交，互不参与对方公式。"""
+        return {c["id"]: float(c["rarity"])
+                for c in self._tables["species.json"]["creatures"]}
