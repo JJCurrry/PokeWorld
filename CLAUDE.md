@@ -11,9 +11,9 @@
 ## 常用命令
 
 - `python tools/verify_all.py` —— 单命令四道门（含第 0 道优化模式自检）。
-- `python tools/balance_check.py` —— G2 平衡采样，输出机器事实；手感归人。
+- `python tools/balance_check.py` —— 平衡采样（`G2-balance-v3`），输出机器事实；数值已于 2026-11-15 22:02 定稿，手感试玩复核归人（非阻塞）。
 - `python tools/autoplayer.py [seed]` —— G3 巡图机器事实；`complete=true` 表示无卡死。
-- G1 起：`tests/golden_seed.json` 由 R7 锁定；变更须人确认后才运行 `python tools/make_golden.py`。
+- G1 起：`tests/golden_seed.json` 由 R7 锁定（G1-v3 `3ab574e4…`）；变更须人**逐次**确认后才运行 `python tools/make_golden.py`。三张 `data/*.json` 与 `MANIFEST.sha256` 同样受保护，改动须逐次人确认 + 重建清单（LF）。
 - 细节以 `docs/地图.md`「关键流程入口」为准；本文件不复制命令细节。
 
 ## 判断性原则（仅放无法自动化的；能写成检查的请下沉为 L1）
