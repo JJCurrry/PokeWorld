@@ -43,12 +43,19 @@ class TestBalanceSampling(unittest.TestCase):
     def test_catch_observed_matches_theory_within_tolerance(self):
         self.assertLess(self.report["catch_max_abs_error"], 0.03)
 
-    def test_full_hp_rows_use_lower_clamp(self):
-        floor = self.tables["encounters.json"]["catch_formula"]["min"]
+    def test_full_hp_rows_follow_hp_base(self):
+        """S2-03 采纳后满血不再恒等于下限；逐物种按 base_catch × catch_base 核对。"""
+        catch = self.tables["encounters.json"]["catch_formula"]
+        species = {c["id"]: c["base_catch"]
+                   for c in self.tables["species.json"]["creatures"]}
+        floor, cap, base = catch["min"], catch["max"], catch["catch_base"]
         rows = [row for row in self.report["catch_rows"] if row["hp_ratio"] == 1.0]
         self.assertEqual(len(rows), 8)
         for row in rows:
-            self.assertAlmostEqual(row["theory"], floor, places=6)
+            self.assertAlmostEqual(
+                row["theory"], min(cap, max(floor, species[row["creature"]] * base)),
+                places=6)
+        self.assertTrue(any(row["theory"] > floor for row in rows))
 
     def test_encounter_follows_weight_ratio(self):
         encounter = self.report["encounter"]
@@ -78,13 +85,15 @@ class TestBalanceSampling(unittest.TestCase):
             self.assertEqual(row["samples"], 2500)
         self.assertLess(self.report["item_max_abs_error"], 0.03)
 
-    def test_full_hp_item_rows_are_still_clamped(self):
-        """S2-03 仍归人：满血即使潮汐网 + 僵麻也恒落下限（如实登记的已知限制）。"""
+    def test_full_hp_item_rows_scale_with_ball_and_status(self):
+        """S2-03 采纳后，满血时换网 + 上状态必须真的拉开捕捉率（旧钳制回归锁已撤销）。"""
         floor = self.tables["encounters.json"]["catch_formula"]["min"]
         rows = [row for row in self.report["item_rows"] if row["hp_ratio"] == 1.0]
         self.assertEqual(len(rows), 2)
-        for row in rows:
-            self.assertAlmostEqual(row["theory"], floor, places=6)
+        plain = next(row for row in rows if row["ball"] == "net_plain")
+        tide = next(row for row in rows if row["ball"] == "net_tide")
+        self.assertGreater(tide["theory"], plain["theory"])
+        self.assertGreaterEqual(plain["theory"], floor)
 
     def test_flee_is_not_always_successful(self):
         flee = self.report["flee"]
@@ -111,6 +120,7 @@ class TestBalanceSampling(unittest.TestCase):
         self.assertEqual(damage["formula"]["atk_scale"], 0.55)
 
     def test_report_note_marks_human_judgement(self):
+        self.assertIn("定稿", self.report["note"])
         self.assertIn("归人", self.report["note"])
 
 

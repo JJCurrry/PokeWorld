@@ -94,6 +94,10 @@ class TestIndependentParse(unittest.TestCase):
                 self.assertGreater(creature["rarity"], 0)
         for key in ("damage_formula", "items", "statuses", "flee", "catch_formula"):
             self.assertIn(key, encounters)
+        # S2-03（人裁决「采纳」）：hp 项的两个结构常数必须真实入表，代码零硬编码。
+        for key in ("catch_base", "hp_weight"):
+            self.assertIn(key, encounters["catch_formula"])
+            self.assertGreater(encounters["catch_formula"][key], 0)
         self.assertNotIn("ball_bonus", encounters["catch_formula"])
         self.assertNotIn("status_bonus", encounters["catch_formula"])
         for item in encounters["items"].values():

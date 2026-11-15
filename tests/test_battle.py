@@ -1,7 +1,9 @@
 """G2 行为测试（不变量 #1 / #3 / #4）：状态机、确定性、公式来源与边界。
 
 G2 返工（ADR-002）后新增：道具消耗 / 装备、异常状态施加与衰减、反击率、
-撤离判定、比例型伤害公式、表驱动倍率；以及 S2-03 未裁决导致的满血钳制回归锁。
+撤离判定、比例型伤害公式、表驱动倍率。
+S2-03（2026-11-15 22:02 人裁决「采纳」）后：原「满血恒落下限」回归锁改为
+「hp 基数生效 + 满血时球 / 状态倍率可拉开差距」，并补 hp 常数表驱动用例。
 全部断言用 unittest 方法，不使用裸 `assert` 语句（优化模式会剥离）。
 """
 from __future__ import annotations
@@ -237,27 +239,51 @@ class TestFormulasComeFromTables(unittest.TestCase):
         cls.statuses = cls.tables["encounters.json"]["statuses"]
         cls.flee = cls.tables["encounters.json"]["flee"]
 
-    def test_full_hp_uses_lower_clamp_for_every_species(self):
+    def test_full_hp_uses_hp_base_not_zero(self):
+        """S2-03 已裁决采纳：满血 hp_factor = catch_base，不再恒落下限。
+
+        低 base_catch 的物种仍可能落到 min，但高 base_catch 的物种必须高于下限；
+        逐物种按 min/max clamp 后的理论值核对，防止把公式写死成常数。
+        """
+        base = self.formula["catch_base"]
+        floor, cap = self.formula["min"], self.formula["max"]
+        above = 0
         for creature in self.tables["species.json"]["creatures"]:
             with self.subTest(cid=creature["id"]):
                 value = catch_probability(self.rules, creature["id"],
                                           creature["base"][0], creature["base"][0])
-                self.assertEqual(value, self.formula["min"])
+                expected = min(cap, max(floor, creature["base_catch"] * base))
+                self.assertAlmostEqual(value, expected, places=6)
+                if value > floor:
+                    above += 1
+        self.assertGreater(above, 0)
 
-    def test_full_hp_is_clamped_even_with_best_ball_and_status(self):
-        """S2-03 仍归人：满血时 (1-hp_ratio)=0，全部倍率被下限钳制。
+    def test_full_hp_ball_and_status_now_take_effect(self):
+        """S2-03 采纳后满血不再被钳死：换网 / 上状态必须真的拉开捕捉率。
 
-        本用例是**如实登记的已知限制**，不是「已修复」；人裁决采纳 ADR-002 §5
-        的 hp 基数方案后应改此断言。
+        旧回归锁断言「满血恒等于下限」已随人裁决撤销；本用例反过来证明
+        道具与状态在满血场景生效，且倍率比例与表一致。
         """
         ball = self.items["net_tide"]["catch_bonus"]
         status = self.statuses["numb"]["catch_bonus"]
-        for creature in self.tables["species.json"]["creatures"]:
-            with self.subTest(cid=creature["id"]):
-                value = catch_probability(self.rules, creature["id"],
-                                          creature["base"][0], creature["base"][0],
-                                          ball, status)
-                self.assertEqual(value, self.formula["min"])
+        plain = catch_probability(self.rules, "c01", 45, 45)
+        boosted = catch_probability(self.rules, "c01", 45, 45, ball, status)
+        self.assertGreater(plain, self.formula["min"])
+        self.assertGreater(boosted, plain)
+        self.assertAlmostEqual(boosted / plain, ball * status, places=6)
+
+    def test_hp_base_constants_come_from_table(self):
+        """S2-03 的两个常数必须来自 catch_formula，不能在代码里写死。"""
+        raised = copy.deepcopy(self.tables)
+        raised["encounters.json"]["catch_formula"]["catch_base"] = 0.30
+        self.assertGreater(
+            catch_probability(Rules.from_tables(raised), "c01", 45, 45),
+            catch_probability(self.rules, "c01", 45, 45))
+        lowered = copy.deepcopy(self.tables)
+        lowered["encounters.json"]["catch_formula"]["hp_weight"] = 0.40
+        self.assertLess(
+            catch_probability(Rules.from_tables(lowered), "c01", 22, 45),
+            catch_probability(self.rules, "c01", 22, 45))
 
     def test_ball_and_status_bonus_come_from_table(self):
         base = catch_probability(self.rules, "c01", 22, 45)
