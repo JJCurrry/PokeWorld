@@ -3,9 +3,14 @@
 `BattleState` 是 frozen dataclass，字段全部为不可变值；`step` 通过
 `dataclasses.replace` 返回**新对象**，绝不原地修改传入的状态或规则快照。
 生成结果不入库：状态可由四元组 + 骨架表重建，存档不需要存战斗日志。
+
+G2 返工（ADR-002）：`Creature.statused: bool` 换成 `status: str | None`
++ `status_ticks: int`；`BattleState` 增 `bag`（frozen tuple）与 `equipped_ball`。
+默认装备由表里第一个 ball 类道具给出，代码不硬编码道具 id。
 """
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from .rules import Rules
@@ -16,7 +21,8 @@ class Creature:
     cid: str
     hp: int
     max_hp: int
-    statused: bool = False
+    status: str | None = None
+    status_ticks: int = 0
 
 
 @dataclass(frozen=True)
@@ -31,14 +37,18 @@ class BattleState:
     weights: tuple[tuple[str, float], ...]
     rules: Rules
     log: tuple[str, ...] = ()
+    bag: tuple[str, ...] = ()
+    equipped_ball: str | None = None
 
 
 def new_state(tables: dict, region: str, cx: int, cy: int, time_phase: str,
               ally_id: str, weights: dict[str, float] | None = None,
-              wild_id: str | None = None, wild_hp_ratio: float = 1.0) -> BattleState:
+              wild_id: str | None = None, wild_hp_ratio: float = 1.0,
+              bag: Sequence[str] = ()) -> BattleState:
     """构造初始状态；`weights` 由调用方从 G1 区块结果按当前时段取出（相对量）。
 
-    `wild_id` / `wild_hp_ratio` 供平衡采样直接构造待测局面，不产生随机。
+    `wild_id` / `wild_hp_ratio` 供平衡采样直接构造待测局面，不产生随机；
+    `bag` 是本次战斗携带的道具 id 序列，`item:<id>` 动作会消耗其中一件。
     """
     rules = Rules.from_tables(tables)
     ally_row = rules.creature(ally_id)
@@ -51,4 +61,5 @@ def new_state(tables: dict, region: str, cx: int, cy: int, time_phase: str,
                                   for cid, weight in (weights or {}).items()))
     outcome = "active" if wild is not None else "idle"
     return BattleState(region, (cx, cy), time_phase, 0, outcome,
-                       ally, wild, frozen_weights, rules)
+                       ally, wild, frozen_weights, rules,
+                       log=(), bag=tuple(bag), equipped_ball=rules.default_ball())
