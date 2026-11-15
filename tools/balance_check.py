@@ -9,7 +9,8 @@
 - 撤离：**20000 次** flee，验证成功率不再是恒定 100%；
 - 伤害矩阵 / 稀有度分布：8×8 全组合与各区域理论比例（确定性计算，不采样）。
 
-平衡手感、A11 数值定稿、S2-03 满血捕捉率均归人；本工具不写「良好 / 达标」一类结论。
+S2-03 已由人于 2026-11-15 22:02 裁决「采纳」（hp 项带基数），A11 数值同次裁定「先定稿」；
+平衡手感试玩复核仍归人（非阻塞）。本工具不写「良好 / 达标」一类结论。
 """
 from __future__ import annotations
 
@@ -209,7 +210,7 @@ def snapshot(root: str | Path | None = None) -> dict:
     item_rows = _item_report(tables)
     return {
         "schema_version": 1,
-        "generator_version": "G2-balance-v2",
+        "generator_version": "G2-balance-v3",
         "catch_samples": len(catch_rows) * CATCH_PER_CASE,
         "catch_cases": len(catch_rows),
         "catch_max_abs_error": max(row["abs_error"] for row in catch_rows),
@@ -221,7 +222,7 @@ def snapshot(root: str | Path | None = None) -> dict:
         "flee": _flee_report(tables),
         "rarity": _rarity_report(tables),
         "damage": _damage_report(tables),
-        "note": "机器事实；平衡手感、A11 数值定稿与 S2-03 满血捕捉率均归人；全部数值为候选占位",
+        "note": "机器事实；A11 数值与 S2-03 已于 2026-11-15 22:02 由人裁定定稿/采纳；平衡手感试玩复核仍归人（非阻塞）",
     }
 
 
