@@ -6,8 +6,9 @@
 ## 当前状态
 
 2026-11-14 人裁决 **G0 / G1 均验收通过**并授权进入 G2。
-**G1**：确定性 `rng(world_seed, region_id, cx, cy)`、8×8 区块地形与遭遇相对权重、golden seed 快照（G1-v2）与规则门 R7。
-**G2 已实现（待人验收）**：`step(state, action, rng) -> state'` 纯函数状态转移（遭遇 / 攻击 / 捕捉 / 撤离）、不可变规则快照、10 万次捕捉 + 10 万次遭遇采样、机器事实报告 `docs/平衡采样报告.md`，**92 用例全绿**。
+**G1**：确定性 `rng(world_seed, region_id, cx, cy)`、8×8 区块地形与遭遇相对权重、golden seed 快照（**G1-v3**）与规则门 R7。
+**G2 返工已实现（待人验收）**：按 2026-11-14 22:24 + 2026-11-15 两次人裁决完成 **比例型伤害公式**（结构常数入表）、**出没稀有度 `rarity`**、**道具 / 异常状态建模**（三档网 + 昏沉 / 僵麻 + 状态机 + 撤离判定）；`step(state, action, rng) -> state'` 签名不变、状态全 frozen。采样扩到 10 万次基础捕捉 + 1.5 万次道具 / 状态 + 10 万次遭遇 + 2 万次撤离，机器事实见 `docs/平衡采样报告.md`，**117 用例全绿**。
+**S2-03 满血捕捉率仍归人**：hp 项未改，满血时道具 / 状态受公式下限钳制而失效，如实登记为已知限制（设计见 `docs/adr/ADR-002-战斗数值与出没稀有度建模.md` §5）。
 G2 里程碑验收仍归人裁决，G3 未开始。**当前进度以 `docs/接力文件.md` 为唯一事实源**。
 
 ## 目录结构
@@ -22,13 +23,14 @@ G2 里程碑验收仍归人裁决，G3 未开始。**当前进度以 `docs/接�
 python tools/verify_all.py          # 四道门：规则 → 编译 → 测试 → 数据可加载
 python -m unittest discover -s tests -v
 python tools/gate.py                # 只看静态规则门 R0–R7
-python tools/balance_check.py       # G2 平衡采样：20 万次动作，输出机器事实 JSON
+python tools/balance_check.py       # G2 平衡采样：23.5 万次动作，输出机器事实 JSON
 ```
 
-`tests/golden_seed.json`（当前 **G1-v2**，SHA256 `d18d1b85…`）由规则门 R7 锁定：**不要直接改快照**。
+`tests/golden_seed.json`（当前 **G1-v3**，SHA256 `3ab574e4…`）由规则门 R7 锁定：**不要直接改快照**。
 仅当生成器或快照变更且**经人确认**后，才运行 `python tools/make_golden.py` 重建，
-再把打印出的 SHA256 登记到 `tools/gate.py::GOLDEN_SNAPSHOT_SHA256` 并在工单变更记录留下新旧哈希。
-平衡手感、A11 数值定稿与 G2-01 伤害公式归人；`docs/平衡采样报告.md` 只归档机器事实。
+再把打印出的 SHA256 登记到 `tools/gate.py::GOLDEN_SNAPSHOT_SHA256` 并在工单变更记录留下新旧哈希与确认结论。
+已发生过两次人确认变更：`c2dbd94d… → d18d1b85…`（G1-v2，S-02 拆通道）、`d18d1b85… → 3ab574e4…`（G1-v3，稀有度差异）；两次地形格逐格未变。
+平衡手感、A11 数值定稿与 **S2-03 满血捕捉率**归人；`docs/平衡采样报告.md` 只归档机器事实。
 
 `ALL GATES GREEN` 才算通过。`verify_all.py` **拒绝在优化模式运行**（`python -O` / `PYTHONOPTIMIZE`）；
 第 0 道前置自检会在 `-O` 子进程投毒并直接验证两条拦截分支，与被跳过的用例等价。
