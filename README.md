@@ -5,11 +5,12 @@
 
 ## 当前状态
 
-2026-11-14 人裁决 **G0 / G1 均验收通过**并授权进入 G2。
+2026-11-15 人裁决「**G2通过，开始下一步开发工作**」→ **G0 / G1 / G2 均已验收通过，G3 已授权开工并实施完成（待人验收）**。
 **G1**：确定性 `rng(world_seed, region_id, cx, cy)`、8×8 区块地形与遭遇相对权重、golden seed 快照（**G1-v3**）与规则门 R7。
-**G2 返工已实现（待人验收）**：按 2026-11-14 22:24 + 2026-11-15 两次人裁决完成 **比例型伤害公式**（结构常数入表）、**出没稀有度 `rarity`**、**道具 / 异常状态建模**（三档网 + 昏沉 / 僵麻 + 状态机 + 撤离判定）；`step(state, action, rng) -> state'` 签名不变、状态全 frozen。采样扩到 10 万次基础捕捉 + 1.5 万次道具 / 状态 + 10 万次遭遇 + 2 万次撤离，机器事实见 `docs/平衡采样报告.md`，**117 用例全绿**。
+**G2**：比例型伤害公式（结构常数入表）、出没稀有度 `rarity`、道具 / 异常状态建模（三档网 + 昏沉 / 僵麻 + 状态机 + 撤离判定）；`step(state, action, rng) -> state'` 签名不变、状态全 frozen。采样 23.5 万次动作，机器事实见 `docs/平衡采样报告.md`。
+**G3 能力门与巡图**：`src/world/progress.py` 把拓扑凝固成 frozen `World`，门控只读 `edges[].requires`（代码零能力名字面量）；`tools/autoplayer.py` 确定性跑遍 **7 区域 / 7 NPC / 100 区块**，自动玩家无卡死、无跳关。全程**零改表 / 零重建 MANIFEST / 零重拍快照**；四道门 **142 用例全绿**。设计见 `docs/adr/ADR-003-能力门与巡图表驱动实现.md`。
 **S2-03 满血捕捉率仍归人**：hp 项未改，满血时道具 / 状态受公式下限钳制而失效，如实登记为已知限制（设计见 `docs/adr/ADR-002-战斗数值与出没稀有度建模.md` §5）。
-G2 里程碑验收仍归人裁决，G3 未开始。**当前进度以 `docs/接力文件.md` 为唯一事实源**。
+**G3 验收仍归人裁决，AI 未自动跨 G4**；当前进度以 `docs/接力文件.md` 为唯一事实源。
 
 ## 目录结构
 
@@ -24,6 +25,7 @@ python tools/verify_all.py          # 四道门：规则 → 编译 → 测试 �
 python -m unittest discover -s tests -v
 python tools/gate.py                # 只看静态规则门 R0–R7
 python tools/balance_check.py       # G2 平衡采样：23.5 万次动作，输出机器事实 JSON
+python tools/autoplayer.py          # G3 巡图：7 区域 / 7 NPC / 100 区块，complete=true 表示无卡死
 ```
 
 `tests/golden_seed.json`（当前 **G1-v3**，SHA256 `3ab574e4…`）由规则门 R7 锁定：**不要直接改快照**。
