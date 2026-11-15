@@ -7,10 +7,13 @@
 G2 返工（人裁决 2026-11-14 22:24 + 2026-11-15 确认，设计见 ADR-002）：
 - 伤害公式由减法型占位改为比例型，结构常数全部来自 `damage_formula`；
 - 道具倍率 / 状态倍率 / 撤离参数全部来自 `items` / `statuses` / `flee`，
-  移除原单值 `ball_bonus` / `status_bonus`；
-- **捕捉公式的 hp 项未改**（S2-03 仍归人裁决）：满血时 (1 - hp_ratio)=0，
-  道具与状态倍率被乘成 0 后再被 min 抬回下限，属公式性质、不是实现缺陷。
-全部数值属 A11 候选占位，不是最终平衡定稿。
+  移除原单值 `ball_bonus` / `status_bonus`。
+
+S2-03（人裁决 2026-11-15 22:02「采纳」，`ADR-002` §5）：
+- 捕捉公式 hp 项由 `(1 - hp_ratio)` 改为带基数线性项
+  `catch_base + (1 - hp_ratio) × hp_weight`（0.12 / 0.88，常数入 `catch_formula`）；
+  满血时 hp_factor = catch_base，换网 / 上状态能拉开差距，不再被下限钳死。
+A11 数值已于同一次人裁决定稿；本模块所有结构常数均来自表，代码零硬编码。
 """
 from __future__ import annotations
 
@@ -31,6 +34,8 @@ class Rules:
     chart: tuple[tuple[str, tuple[tuple[str, float], ...]], ...]
     catch_min: float
     catch_max: float
+    catch_base: float
+    catch_hp_weight: float
     damage_atk_scale: float
     damage_guard_scale: float
     damage_min: int
@@ -72,6 +77,7 @@ class Rules:
         return cls(
             creatures, chart,
             float(catch["min"]), float(catch["max"]),
+            float(catch["catch_base"]), float(catch["hp_weight"]),
             float(formula["atk_scale"]), float(formula["guard_scale"]),
             int(formula["min_damage"]),
             items, statuses,
@@ -121,16 +127,20 @@ class Rules:
 
 def catch_probability(rules: Rules, cid: str, hp: int, max_hp: int,
                       ball_bonus: float = 1.0, status_bonus: float = 1.0) -> float:
-    """GDD-v0 §4：p = clamp(base_catch × (1 - hp_ratio) × 球倍率 × 状态倍率, min, max)。
+    """`ADR-002` §5（人裁决采纳）：
+    p = clamp(base_catch × [catch_base + (1 - hp_ratio) × hp_weight]
+              × 球倍率 × 状态倍率, min, max)。
 
     两个 1.0 是「无加成」的中性值，不是平衡常数；实际倍率由调用方从道具 / 状态表取。
-    hp 项结构未改（S2-03 归人），满血恒落下限属公式性质。
+    hp 项的四个结构常数（min / max / catch_base / hp_weight）全部来自 `catch_formula`，
+    代码零硬编码；满血时 hp_factor = catch_base，倍率不再被乘成 0。
     """
     if max_hp <= 0:
         raise ValueError("max_hp 必须为正整数")
     row = rules.creature(cid)
     hp_ratio = min(1.0, max(0.0, hp / max_hp))
-    raw = row[5] * (1.0 - hp_ratio) * ball_bonus * status_bonus
+    hp_factor = rules.catch_base + (1.0 - hp_ratio) * rules.catch_hp_weight
+    raw = row[5] * hp_factor * ball_bonus * status_bonus
     return min(rules.catch_max, max(rules.catch_min, raw))
 
 

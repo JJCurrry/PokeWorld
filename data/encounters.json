@@ -71,7 +71,9 @@
   },
   "catch_formula": {
     "min": 0.02,
-    "max": 0.95
+    "max": 0.95,
+    "catch_base": 0.12,
+    "hp_weight": 0.88
   },
   "damage_formula": {
     "atk_scale": 0.55,

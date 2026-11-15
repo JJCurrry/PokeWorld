@@ -102,6 +102,11 @@ def validate_encounters(d: dict) -> None:
     must(_is_number(catch.get("min")) and _is_number(catch.get("max"))
          and 0 <= catch["min"] <= catch["max"] <= 1,
          "catch_formula.min/max 必须是 [0,1] 内的数值且 min <= max")
+    # S2-03（2026-11-15 22:02 人裁决「采纳」）：hp 项改为带基数的线性项，
+    # 两个结构常数同样必须入表，代码里不得写死；满血时 hp_factor = catch_base。
+    must(_is_number(catch.get("catch_base")) and _is_number(catch.get("hp_weight"))
+         and 0 <= catch["catch_base"] <= 1 and 0 < catch["hp_weight"] <= 1,
+         "catch_formula.catch_base/hp_weight 必须是 [0,1] 内数值且 hp_weight > 0")
 
     formula = d.get("damage_formula", {})
     for key in ("atk_scale", "guard_scale", "min_damage"):
