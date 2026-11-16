@@ -5,7 +5,7 @@
 
 ## 当前状态
 
-2026-11-16 人答复「开启下一步G4的开发」→ **G4 获开工授权并已实施完毕，待人裁决验收**（A9）。**G0 / G1 / G2 / G3 均已由人验收通过**；AI 未自判 G4 通过、未开工 G5。当前进度以 `docs/接力文件.md` 为唯一事实源。
+2026-11-16 人答复「**G4验收通过，开启G5的开发工作**」→ **G4 已由人裁决验收通过；G5 已获开工授权**（A9，两件事各自落单）。**G0 / G1 / G2 / G3 / G4 均已由人验收通过**；当前工单 `docs/工单/G5-可玩闭环.md`，设计 `ADR-005`。**G5 交付后仍须人裁决验收，AI 未自判通过、未开工 G6**。当前进度以 `docs/接力文件.md` 为唯一事实源。
 
 **G1**：确定性 `rng(world_seed, region_id, cx, cy)`、8×8 区块地形与遭遇相对权重、golden seed 快照（**G1-v3**）与规则门 R7。
 **G2**：比例型伤害公式（结构常数入表）、出没稀有度 `rarity`、道具 / 异常状态建模（三档网 + 昏沉 / 僵麻 + 状态机 + 撤离判定）；`step(state, action, rng) -> state'` 签名不变、状态全 frozen。
@@ -15,6 +15,8 @@
 
 **G4 图鉴 / 成长 / 事件脚本 / 存档**：`src/world/atlas.py` 按出没条件登记图鉴（区域里程碑可达成、死端拓扑可反证）；`evolution.py` 成长刻度集中在单一常量、个体值由 `rng(..., stream="growth")` 派生；`scripts.py` 16 条纯字面量脚本只产出效果声明，唯一解释器 `game.apply_effects` 只改展示层字段；`save.py` 落地不变量 #6（只存 `world_seed + flags + 队伍状态`，生成结果全数拒绝、`-O` 下校验不失效）。`tools/g4_report.py` 输出三条 DoD 的机器事实 JSON。实施期全程**零改表 / 零重建 MANIFEST / 零重拍快照**；设计见 `ADR-004`，逐条证据见 `docs/工单/G4-图鉴进化事件脚本.md`。**B 级文案品味（16 条原创中文短句）仍归人复核**。
 
+**G5 可玩闭环（已获开工授权，按 `ADR-005` 实施）**：DoD「从起始区域走到联盟可完整通关；依赖缺失时验证墙优雅跳过」。将引入 pygame 作为**可选**第三方依赖（`requirements.txt`），表现层只读状态、不回写世界，世界状态唯一入口仍是 `progress.step`；存档走 G4 三类字段投影。**B 级手感与观感归人裁决**；全程零改表 / 零重建 MANIFEST / 零重拍快照。实施结果以 `docs/工单/G5-可玩闭环.md` 的实测证据为准。
+
 四道门 **201 用例全绿**（`ALL GATES GREEN`）；G4 新增 58 条用例。独立冷眼按人裁定维持 **G6**；G1 / G2 / G3 / G4 均只有实现者自审，不冒充「已通过评审」。
 
 ## 目录结构
@@ -23,7 +25,7 @@
 
 ## 快速开始
 
-零第三方依赖，Python 3.13 标准库即可：
+零第三方依赖（G0–G4）：验证墙只用 Python 3.13 标准库即可跑；**G5 起 pygame 为可选依赖**（`pip install -r requirements.txt`），缺失时验证墙优雅跳过、headless 通关照常可用。
 
 ```bash
 python tools/verify_all.py          # 四道门：规则 → 编译 → 测试 → 数据可加载
@@ -32,6 +34,9 @@ python tools/gate.py                # 只看静态规则门 R0–R7
 python tools/balance_check.py       # 平衡采样：23.5 万次动作，输出机器事实 JSON（G2-balance-v3）
 python tools/autoplayer.py          # G3 巡图：7 区域 / 7 NPC / 100 区块，complete=true 表示无卡死
 python tools/g4_report.py           # G4 端到端：图鉴里程碑 / 存档 roundtrip / 脚本不改世界状态
+python tools/g5_report.py           # G5 端到端：完整通关 / 存档恢复后通关 / 纯投影 / 可选依赖
+python -m src.main --headless       # 无显示器完整通关；--window 开窗口，--save/--load 读写 saves/
+POKEWORLD_NO_PYGAME=1 python tools/verify_all.py   # 模拟依赖缺失：四道门仍应 ALL GATES GREEN
 ```
 
 `tests/golden_seed.json`（当前 **G1-v3**，SHA256 `3ab574e4…`）由规则门 R7 锁定：**不要直接改快照**。

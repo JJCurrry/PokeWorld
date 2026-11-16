@@ -6,7 +6,7 @@
 
 ## 一句话是什么
 
-原创精灵收集 + 种子化群岛探索的 2D 单机游戏；Python 3.13 标准库优先，pygame 仅在 G5 引入；按 ai-coding-method 的门控式自治推进。
+原创精灵收集 + 种子化群岛探索的 2D 单机游戏；Python 3.13 标准库优先，pygame 自 G5 起作为**可选**第三方依赖；按 ai-coding-method 的门控式自治推进。
 
 ## 常用命令
 
@@ -14,6 +14,8 @@
 - `python tools/balance_check.py` —— 平衡采样（`G2-balance-v3`），输出机器事实；数值已于 2026-11-15 22:02 定稿，手感试玩复核归人（非阻塞）。
 - `python tools/autoplayer.py [seed]` —— G3 巡图机器事实；`complete=true` 表示无卡死。
 - `python tools/g4_report.py [seed]` —— G4 端到端机器事实（图鉴里程碑 / 存档 roundtrip / 脚本不改世界状态）；`complete=true` 表示三条 DoD 全通过。
+- `python tools/g5_report.py [seed]` —— G5 端到端机器事实（完整通关 / 存档恢复后通关 / 表现层纯投影 / 可选依赖）；`complete=true` 表示六项 DoD 全通过。
+- `python -m src.main --headless [seed]` —— 无显示器完整通关；`--window` 开 pygame 窗口（依赖缺失时降级 headless 并提示）；`--save` / `--load` 读写 `saves/`。
 - G1 起：`tests/golden_seed.json` 由 R7 锁定（G1-v3 `3ab574e4…`）；变更须人**逐次**确认后才运行 `python tools/make_golden.py`。三张 `data/*.json` 与 `MANIFEST.sha256` 同样受保护，改动须逐次人确认 + 重建清单（LF）。
 - 细节以 `docs/地图.md`「关键流程入口」为准；本文件不复制命令细节。
 
@@ -40,7 +42,7 @@
 - 整体里程碑拆解（当前计划）：`docs/任务架构细分.md`
 - 游戏设计 / 原创溯源 / 合规自评：`docs/GDD-v0.md`
 - 参考实现 / 黄金路径：G0 铸造 `src/schema.py` + `tools/gate.py`，G1 铸造 `src/gen/`，G2 铸造 `src/battle/`，G3 铸造 `src/world/progress.py` + `tools/autoplayer.py`，G4 铸造 `src/world/atlas.py` / `evolution.py` / `scripts.py` / `save.py` / `game.py` + `tools/g4_report.py`；清单见 `docs/地图.md`，**未落盘的模块不得假称其存在**。
-- **G4 已实施完毕、待人裁决验收**；开工 G5 须人另行授权（「通过」与「授权开工」是两件事）。当前裁决清单见 `docs/接力文件.md`「待人类裁决的问题」。
+- **G4 已由人裁决验收通过；G5 已由人授权开工（2026-11-16「G4验收通过，开启G5的开发工作」）**。授权范围仅开工 G5：不含改受保护三表 / 重建 `MANIFEST.sha256` / 重拍 golden 快照的逐次确认，不含 G5 验收通过、不含 G6 开工。**G5 交付后仍须人裁决验收（A9），AI 不自判通过、不开工 G6**。当前待裁决 1 项（G4 的 B 级文案品味，可延后），清单见 `docs/接力文件.md`「待人类裁决的问题」。
 
 ## 仲裁序（信息源冲突时谁先读）
 
