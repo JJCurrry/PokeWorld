@@ -42,6 +42,7 @@ class Session:
     cursor: tuple[int, int] = (0, 0)
     phase: str = "day"
     messages: tuple[str, ...] = ()
+    chunks_seen: int = 0
 
 
 def new_session(tables: dict, world_seed: str,
@@ -139,7 +140,7 @@ def _move(session: Session, direction: str, world: World) -> Session:
 
 
 def _register_chunks(state: GameState, tables: dict,
-                     region: str) -> GameState:
+                     region: str) -> tuple[GameState, int]:
     """巡查一个区域时逐区块登记图鉴（与 `g4_report._walk` 同构，纯函数）。"""
     width, height = chunk_grid(state.world, region)
     atlas = state.atlas
@@ -147,7 +148,7 @@ def _register_chunks(state: GameState, tables: dict,
         for cx in range(width):
             chunk = generate_chunk(tables, state.world_seed, region, cx, cy)
             atlas = observe_chunk(atlas, region, chunk)
-    return replace(state, atlas=atlas)
+    return replace(state, atlas=atlas), width * height
 
 
 def _enter_region(state: GameState, region: str) -> tuple[GameState, tuple[str, ...]]:
@@ -177,16 +178,18 @@ def apply(session: Session, action: str, tables: dict) -> Session:
     before = state.progress
     moved = step(before, action, world)
     new_state = replace(state, progress=moved)
-    if (action == "survey"
-            and len(moved.surveyed_regions) > len(before.surveyed_regions)):
-        new_state = _register_chunks(new_state, tables, before.region)
-
     messages = session.messages
     cursor = session.cursor
+    chunks_seen = session.chunks_seen
+    if (action == "survey"
+            and len(moved.surveyed_regions) > len(before.surveyed_regions)):
+        new_state, counted = _register_chunks(new_state, tables, before.region)
+        chunks_seen += counted
     if moved.region != before.region:
         new_state, messages = _enter_region(new_state, moved.region)
         cursor = (0, 0)
-    return replace(session, state=new_state, cursor=cursor, messages=messages)
+    return replace(session, state=new_state, cursor=cursor,
+                   messages=messages, chunks_seen=chunks_seen)
 
 
 def play_to_goal(session: Session, tables: dict, choose: object,
