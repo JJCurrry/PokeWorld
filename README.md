@@ -5,7 +5,7 @@
 
 ## 当前状态
 
-2026-11-15 22:02 人一次性裁决 6 项 → **G0 / G1 / G2 / G3 均已由人验收通过**；**G4 未获开工授权，停在 G3 已验收点**（A9）。当前进度以 `docs/接力文件.md` 为唯一事实源。
+2026-11-16 人答复「开启下一步G4的开发」→ **G4 获开工授权并已实施完毕，待人裁决验收**（A9）。**G0 / G1 / G2 / G3 均已由人验收通过**；AI 未自判 G4 通过、未开工 G5。当前进度以 `docs/接力文件.md` 为唯一事实源。
 
 **G1**：确定性 `rng(world_seed, region_id, cx, cy)`、8×8 区块地形与遭遇相对权重、golden seed 快照（**G1-v3**）与规则门 R7。
 **G2**：比例型伤害公式（结构常数入表）、出没稀有度 `rarity`、道具 / 异常状态建模（三档网 + 昏沉 / 僵麻 + 状态机 + 撤离判定）；`step(state, action, rng) -> state'` 签名不变、状态全 frozen。
@@ -13,7 +13,9 @@
 **A11 数值已由人裁定「先定稿」**：全部数值（含新增两个 hp 常数）不再是候选占位；手感试玩复核作为非阻塞后续仍归人。
 **G3 能力门与巡图**：`src/world/progress.py` 把拓扑凝固成 frozen `World`，门控只读 `edges[].requires`（代码零能力名字面量）；`tools/autoplayer.py` 确定性跑遍 **7 区域 / 7 NPC / 100 区块**，无卡死、无跳关。G3 实施期全程**零改表 / 零重建 MANIFEST / 零重拍快照**；设计见 `docs/adr/ADR-003-能力门与巡图表驱动实现.md`。
 
-四道门 **143 用例全绿**（`ALL GATES GREEN`）。独立冷眼按人裁定维持 **G6**；G1 / G2 / G3 均只有实现者自审，不冒充「已通过评审」。
+**G4 图鉴 / 成长 / 事件脚本 / 存档**：`src/world/atlas.py` 按出没条件登记图鉴（区域里程碑可达成、死端拓扑可反证）；`evolution.py` 成长刻度集中在单一常量、个体值由 `rng(..., stream="growth")` 派生；`scripts.py` 16 条纯字面量脚本只产出效果声明，唯一解释器 `game.apply_effects` 只改展示层字段；`save.py` 落地不变量 #6（只存 `world_seed + flags + 队伍状态`，生成结果全数拒绝、`-O` 下校验不失效）。`tools/g4_report.py` 输出三条 DoD 的机器事实 JSON。实施期全程**零改表 / 零重建 MANIFEST / 零重拍快照**；设计见 `ADR-004`，逐条证据见 `docs/工单/G4-图鉴进化事件脚本.md`。**B 级文案品味（16 条原创中文短句）仍归人复核**。
+
+四道门 **201 用例全绿**（`ALL GATES GREEN`）；G4 新增 58 条用例。独立冷眼按人裁定维持 **G6**；G1 / G2 / G3 / G4 均只有实现者自审，不冒充「已通过评审」。
 
 ## 目录结构
 
@@ -29,6 +31,7 @@ python -m unittest discover -s tests -v
 python tools/gate.py                # 只看静态规则门 R0–R7
 python tools/balance_check.py       # 平衡采样：23.5 万次动作，输出机器事实 JSON（G2-balance-v3）
 python tools/autoplayer.py          # G3 巡图：7 区域 / 7 NPC / 100 区块，complete=true 表示无卡死
+python tools/g4_report.py           # G4 端到端：图鉴里程碑 / 存档 roundtrip / 脚本不改世界状态
 ```
 
 `tests/golden_seed.json`（当前 **G1-v3**，SHA256 `3ab574e4…`）由规则门 R7 锁定：**不要直接改快照**。
