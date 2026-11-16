@@ -41,8 +41,8 @@
 - 跨会话交接棒：`docs/接力文件.md`
 - 整体里程碑拆解（当前计划）：`docs/任务架构细分.md`
 - 游戏设计 / 原创溯源 / 合规自评：`docs/GDD-v0.md`
-- 参考实现 / 黄金路径：G0 铸造 `src/schema.py` + `tools/gate.py`，G1 铸造 `src/gen/`，G2 铸造 `src/battle/`，G3 铸造 `src/world/progress.py` + `tools/autoplayer.py`，G4 铸造 `src/world/atlas.py` / `evolution.py` / `scripts.py` / `save.py` / `game.py` + `tools/g4_report.py`；清单见 `docs/地图.md`，**未落盘的模块不得假称其存在**。
-- **G4 已由人裁决验收通过；G5 已由人授权开工（2026-11-16「G4验收通过，开启G5的开发工作」）**。授权范围仅开工 G5：不含改受保护三表 / 重建 `MANIFEST.sha256` / 重拍 golden 快照的逐次确认，不含 G5 验收通过、不含 G6 开工。**G5 交付后仍须人裁决验收（A9），AI 不自判通过、不开工 G6**。当前待裁决 1 项（G4 的 B 级文案品味，可延后），清单见 `docs/接力文件.md`「待人类裁决的问题」。
+- 参考实现 / 黄金路径：G0 铸造 `src/schema.py` + `tools/gate.py`，G1 铸造 `src/gen/`，G2 铸造 `src/battle/`，G3 铸造 `src/world/progress.py` + `tools/autoplayer.py`，G4 铸造 `src/world/atlas.py` / `evolution.py` / `scripts.py` / `save.py` / `game.py` + `tools/g4_report.py`，G5 铸造 `src/world/session.py` + `src/view/` + `src/main.py` + `tools/g5_report.py`；清单见 `docs/地图.md`，**未落盘的模块不得假称其存在**。
+- **G4 已由人裁决验收通过；G5 已由人授权开工并实施完毕，按 A9 待人裁决验收**（2026-11-16「G4验收通过，开启G5的开发工作」）。开工授权范围仅 G5：不含改受保护三表 / 重建 `MANIFEST.sha256` / 重拍 golden 快照的逐次确认，不含 G5 验收通过、不含 G6 开工；实施期实测满足零改表 / 零重建清单 / 零重拍快照。**AI 不自判通过、不开工 G6、未写任何 G6 代码**。当前待裁决 **4 项**（A 组：G5 验收 / G6 开工，阻塞；B 组：B 级文案品味 / B 级手感观感，可延后），清单见 `docs/接力文件.md`「待人类裁决的问题」。
 
 ## 仲裁序（信息源冲突时谁先读）
 
