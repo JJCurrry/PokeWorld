@@ -18,6 +18,7 @@
 - `python -m src.main --headless [seed]` —— 无显示器完整通关；`--window` 开 pygame 窗口（依赖缺失时降级 headless 并提示）；`--save` / `--load` 读写 `saves/`。
 - G1 起：`tests/golden_seed.json` 由 R7 锁定（G1-v3 `3ab574e4…`）；变更须人**逐次**确认后才运行 `python tools/make_golden.py`。三张 `data/*.json` 与 `MANIFEST.sha256` 同样受保护，改动须逐次人确认 + 重建清单（LF）。
 - G6 起：`python tools/gate.py`（R0–R7）、`docs/评审/G6-冷眼.md`（独立会话冷眼，实现者不改结论）、`docs/软著材料清单.md`（清单 + 对应制品路径 + 待补动作，非成品材料）。
+- G7 起：`python tools/g7_report.py [seed]`（默认 `G7-a`）—— 战斗 / 捕捉端到端 JSON（遭遇 → 捕捉 → 图鉴 → 存档 → 读档 + 反证 + 确定性），`complete=true` 表示五项 DoD 机器可判定部分全通过。
 - 细节以 `docs/地图.md`「关键流程入口」为准；本文件不复制命令细节。
 
 ## 判断性原则（仅放无法自动化的；能写成检查的请下沉为 L1）
@@ -43,7 +44,7 @@
 - 整体里程碑拆解（当前计划）：`docs/任务架构细分.md`
 - 游戏设计 / 原创溯源 / 合规自评：`docs/GDD-v0.md`
 - 参考实现 / 黄金路径：G0 铸造 `src/schema.py` + `tools/gate.py`，G1 铸造 `src/gen/`，G2 铸造 `src/battle/`，G3 铸造 `src/world/progress.py` + `tools/autoplayer.py`，G4 铸造 `src/world/atlas.py` / `evolution.py` / `scripts.py` / `save.py` / `game.py` + `tools/g4_report.py`，G5 铸造 `src/world/session.py` + `src/view/` + `src/main.py` + `tools/g5_report.py`；清单见 `docs/地图.md`，**未落盘的模块不得假称其存在**。
-- **G4 / G5 / G6 均已由人裁决验收通过；G7 已由人授权开工（核心循环可玩化）**（2026-11-17「G6验收通过，开发G7」+ 方向选项）。G7 范围：把 G2 战斗 / 捕捉接进 G5 窗口、复用 A11 定稿公式与三表，**零改三表 / 零重建 `MANIFEST.sha256` / 零重拍 golden 快照**，不含改表逐次确认、不含 G7 验收；「8 潮灵扩充 / 平衡调优」仍须逐次人确认才实施。当前工单 `docs/工单/G7-核心循环可玩化.md`，设计 `ADR-007`；G6 工单已归档（含两次人裁决记录）。**AI 不自判 G7 通过**。当前待裁决 **3 项**（均 B 组、可延后：冷眼处置认可 / 改表授权 / 文案品味与手感观感），清单见 `docs/接力文件.md`「待人类裁决的问题」。
+- **G4 / G5 / G6 均已由人裁决验收通过；G7 已实施完毕、按 A9 待人裁决验收**（2026-11-17「G6验收通过，开发G7」+ 方向「核心循环可玩化」）。G7 把 G2 战斗 / 捕捉接进 G5 窗口、复用 A11 定稿公式与三表，**零改三表 / 零重建 `MANIFEST.sha256` / 零重拍 golden 快照**；`g7_report G7-a` `complete=true`、四道门 **253 用例**全绿、新增 S7-01~S7-03；「8 潮灵扩充 / 平衡调优」仍须逐次人确认才实施。当前工单 `docs/工单/G7-核心循环可玩化.md`，设计 `ADR-007`（含实施结论）；G6 工单已归档。**AI 不自判 G7 通过、不预支 G8**。当前待裁决 **5 项**（A 组 2 项阻塞：G7 验收 / G8 开工；B 组 3 项可延后），清单见 `docs/接力文件.md`「待人类裁决的问题」。
 
 ## 仲裁序（信息源冲突时谁先读）
 
