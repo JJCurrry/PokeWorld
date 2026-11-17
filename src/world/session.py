@@ -8,6 +8,11 @@
   本模块不做任何文件 I/O（I/O 只在 `src/main.py`）。
 - `Session` frozen；`apply` 用 `dataclasses.replace` 返回新对象，不改入参。
 
+G7 核心循环可玩化（`ADR-007`）：战斗 / 捕捉编排也住在本模块 —— 战斗状态机
+本身仍是 G2 `src/battle::step` 纯函数，本模块只负责「何时开局、用哪个权重、
+终局怎么回写图鉴」，不开第二个状态入口。`battle` / `battle_ctx` 是会话的
+临时运行时字段，**不进存档**，读档后战斗重置（与 S4-02 / S5-02 同类投影限制）。
+
 纯函数契约：不读时钟、不做 I/O、不改传入的表 / 状态；非法输入显式抛
 `ValueError`（禁 assert，`python -O` 下同样生效）。
 """
@@ -15,9 +20,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
+from ..battle.context import RngContext
+from ..battle.engine import step as battle_step
+from ..battle.state import BattleState
+from ..battle.state import new_state as new_battle_state
 from ..gen.chunk import generate_chunk
 from .atlas import observe_chunk
-from .game import GameState, apply_effects, from_save, new_game, to_save, train
+from .game import (GameState, apply_effects, from_save, new_game,
+                   observe as observe_game, to_save, train)
 from .progress import Progress, World, chunk_grid, edge_is_open, step
 from .save import decode, encode
 from .scripts import effects_of, select, texts_of
@@ -26,6 +36,11 @@ PHASES = ("day", "night")
 DIRECTIONS = ("up", "down", "left", "right")
 MOVE_PREFIX = "move:"
 EDGE_PREFIX = "edge:"
+ITEM_PREFIX = "item:"
+# 战斗终局（G2 `engine.step` 的 outcome 值域中「已结束」的四态）。
+BATTLE_TERMINAL = ("won", "caught", "lost", "fled")
+# 直接转发的战斗动作；`encounter` / `item:<id>` 另作前缀处理。
+BATTLE_ACTIONS = ("attack", "catch", "flee")
 
 
 def _require(condition: object, message: str) -> None:
@@ -43,6 +58,11 @@ class Session:
     phase: str = "day"
     messages: tuple[str, ...] = ()
     chunks_seen: int = 0
+    # G7 战斗运行时（frozen、不进存档）：仅 encounter 之后到终局之前非空。
+    battle: BattleState | None = None
+    battle_ctx: RngContext | None = None
+    encounters: int = 0
+    captures: int = 0
 
 
 def new_session(tables: dict, world_seed: str,
@@ -158,12 +178,90 @@ def _enter_region(state: GameState, region: str) -> tuple[GameState, tuple[str, 
     return apply_effects(state, effects), texts_of(rows)
 
 
+def _dominant_terrain(chunk: dict) -> str:
+    """区块主导地形：计数最大、同分按名字典序（与 `atlas.observe_chunk` 同口径）。"""
+    counts = chunk["terrain_counts"]
+    _require(bool(counts), "区块缺少地形计数")
+    return min(counts, key=lambda name: (-counts[name], name))
+
+
+def _bag_from_tables(tables: dict) -> tuple[str, ...]:
+    """本次战斗携带的道具 = 表里已登记的全部道具 id（排序、零硬编码）。"""
+    items = tables["encounters.json"]["items"]
+    return tuple(sorted(str(key) for key in items))
+
+
+def _start_battle(session: Session, tables: dict) -> Session:
+    """在当前区块 / 时段开局：权重来自 `generate_chunk`，状态由 G2 纯函数构造。"""
+    _require(session.battle is None, "已有战斗进行中，不能重复遭遇")
+    state = session.state
+    region = state.progress.region
+    cx, cy = session.cursor
+    phase = session.phase
+    chunk = generate_chunk(tables, state.world_seed, region, cx, cy)
+    weights = chunk["encounter_weights"][phase]
+    ally_id = state.party[0].cid
+    battle = new_battle_state(tables, region, cx, cy, phase, ally_id,
+                              weights=weights, bag=_bag_from_tables(tables))
+    ctx = RngContext(state.world_seed, region, cx, cy)
+    battle = battle_step(battle, "encounter", ctx)
+    return replace(session, battle=battle, battle_ctx=ctx.advance(),
+                   encounters=session.encounters + 1,
+                   messages=session.messages + (f"遭遇潮灵于 {region} ({cx},{cy})",))
+
+
+def _finish_battle(session: Session, tables: dict, battle: BattleState) -> Session:
+    """终局回写：捕获 / 战胜的潮灵经 `game.observe` 进图鉴，清空运行时战斗态。
+
+    地形 / 时段从战斗绑定的区块与时段派生（与 `observe_chunk` 同口径），
+    不新增图鉴写入口、不改受保护表；区域 / 坐标来自 battle 自身快照。
+    """
+    state = session.state
+    outcome = battle.outcome
+    captures = session.captures
+    if outcome in ("caught", "won") and battle.wild is not None:
+        cx, cy = battle.coord
+        chunk = generate_chunk(tables, state.world_seed, battle.region, cx, cy)
+        state = observe_game(state, battle.wild.cid, battle.region,
+                             _dominant_terrain(chunk), battle.time_phase)
+        captures += 1
+    message = f"战斗结束：{outcome}"
+    return replace(session, state=state, battle=None, battle_ctx=None,
+                   captures=captures,
+                   messages=session.messages + (message,))
+
+
+def _battle_action(session: Session, action: str, tables: dict) -> Session:
+    """把一个战斗动作交给 G2 纯函数，同步 rng tick；终局时回写并清态。"""
+    battle = session.battle
+    ctx = session.battle_ctx
+    _require(battle is not None and ctx is not None, f"当前没有战斗，不能执行：{action}")
+    _require(ctx.tick == battle.tick, "战斗随机上下文与状态不同步")
+    next_battle = battle_step(battle, action, ctx)
+    next_ctx = ctx.advance()
+    advanced = replace(session, battle=next_battle, battle_ctx=next_ctx)
+    if next_battle.outcome in BATTLE_TERMINAL:
+        return _finish_battle(advanced, tables, next_battle)
+    return advanced
+
+
 def apply(session: Session, action: str, tables: dict) -> Session:
     """唯一状态转移：动作 → 新 Session。不读时钟、不做 I/O、不改入参。"""
     _require(isinstance(session, Session), "session 必须是 Session")
     _require(isinstance(action, str) and bool(action), "动作必须是非空字符串")
     state = session.state
     world = state.world
+
+    # G7 战斗动作优先分发：一旦有战斗进行中，只接受战斗动作与撤离类；
+    # 世界动作在战斗中被拒绝，避免状态在两条状态机之间串线。
+    if action == "encounter":
+        return _start_battle(session, tables)
+    if action in BATTLE_ACTIONS or action.startswith(ITEM_PREFIX):
+        return _battle_action(session, action, tables)
+
+    # 战斗进行中不接受世界 / 视图动作，避免两条状态机串线。
+    _require(session.battle is None,
+             f"战斗进行中，只接受战斗动作，收到：{action}")
 
     if action.startswith(MOVE_PREFIX):
         return _move(session, action[len(MOVE_PREFIX):], world)

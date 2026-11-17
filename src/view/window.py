@@ -68,6 +68,15 @@ def draw(surface: object, frame: Frame, pygame: object, font: object) -> int:
                  (PANEL_ORIGIN[0], hint_y))
     surface.blit(font.render("通关" if frame.complete else "巡游中", True, CURSOR_COLOR),
                  (PANEL_ORIGIN[0], hint_y + LINE_HEIGHT))
+    # G7 战斗面板：只读 frame 的投影字段，不访问任何状态对象。
+    if frame.combat:
+        combat_y = hint_y + 2 * LINE_HEIGHT
+        for index, line in enumerate(frame.combat_lines):
+            surface.blit(font.render(line, True, CURSOR_COLOR),
+                         (PANEL_ORIGIN[0], combat_y + index * LINE_HEIGHT))
+        hint_combat_y = combat_y + (len(frame.combat_lines) + 1) * LINE_HEIGHT
+        surface.blit(font.render(frame.combat_hint, True, TEXT_COLOR),
+                     (PANEL_ORIGIN[0], hint_combat_y))
     return drawn
 
 
@@ -105,8 +114,12 @@ def run_window(session: Session, tables: dict, *,
             if event.type != pygame.KEYDOWN:
                 continue
             key = pygame.key.name(event.key)
+            in_combat = session.battle is not None
+            items = tuple(sorted(str(name) for name
+                                 in tables["encounters.json"]["items"])) if in_combat else ()
             action = action_for_key(key, session.state.world,
-                                    session.state.progress.region)
+                                    session.state.progress.region,
+                                    combat=in_combat, items=items)
             if action is None:
                 continue
             if action in CLI_ACTIONS:

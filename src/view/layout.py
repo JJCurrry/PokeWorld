@@ -25,6 +25,18 @@ PHASE_LABELS = (("day", "白昼"), ("night", "夜潮"))
 HELP_TEXT = "方向键移动 · S 巡查 · N 交谈 · 数字键跨区 · A 自动通关 · P 时段 · T 成长 · Q 退出"
 IDLE_TEXT = "潮声从远处传来，路还很长。"
 
+# G7 战斗键位（单独一张表，不改 G5 的 13 条巡图键位，兼容既有测试）。
+# 道具键（数字）在 `action_for_key` 里按 `items` 表的顺序派生，零道具 id 字面量。
+COMBAT_KEY_ACTIONS = (
+    ("b", "encounter"),
+    ("j", "attack"),
+    ("k", "catch"),
+    ("l", "flee"),
+    ("q", "quit"),
+    ("escape", "quit"),
+)
+COMBAT_HELP = "B 遭遇 · J 攻击 · K 捕捉 · L 撤离 · 数字键道具 · Q 退出"
+
 # pygame.key.name() 的名字 → 会话动作。数字键跨边在 action_for_key 里按表派生，
 # 不把边数写死成常量。
 KEY_ACTIONS = (
@@ -64,6 +76,28 @@ class Frame:
     lines: tuple[str, ...]
     hint: str
     complete: bool
+    # G7 战斗投影（带默认值，兼容 G5 位置构造与既有测试）。
+    combat: bool = False
+    combat_lines: tuple[str, ...] = ()
+    combat_hint: str = ""
+
+
+def _combat_projection(session: Session, tables: dict) -> tuple[bool, tuple[str, ...], str]:
+    """从会话的运行时战斗状态派生只读战斗面板（不改状态、零 I/O）。"""
+    battle = session.battle
+    if battle is None:
+        return False, (), ""
+    ally = battle.ally
+    wild = battle.wild
+    ally_label = "—" if ally is None else f"{ally.cid} {ally.hp}/{ally.max_hp}"
+    wild_label = "—" if wild is None else f"{wild.cid} {wild.hp}/{wild.max_hp}"
+    tail = battle.log[-2:] if battle.log else ()
+    lines = (
+        f"战斗 · {battle.outcome}",
+        f"我方 {ally_label}",
+        f"野生 {wild_label}",
+    ) + tail
+    return True, tuple(lines), COMBAT_HELP
 
 
 def _region_name(tables: dict, region: str) -> str:
@@ -106,17 +140,29 @@ def frame_of(session: Session, tables: dict) -> Frame:
         f"图鉴 {len(state.atlas.entries)} 条 · 队伍 Lv.{member.level}",
         session.messages[-1] if session.messages else IDLE_TEXT,
     )
+    combat, combat_lines, combat_hint = _combat_projection(session, tables)
     return Frame(region, region_name, (cx, cy), session.phase, grid,
-                 palette_of(tables), lines, HELP_TEXT, is_complete(session))
+                 palette_of(tables), lines, HELP_TEXT, is_complete(session),
+                 combat, combat_lines, combat_hint)
 
 
-def action_for_key(key: str, world: World, region: str) -> str | None:
-    """键盘名 → 动作；数字键只对**当前区域相连**的边生效，避免非法边抛错。"""
-    for name, action in KEY_ACTIONS:
+def action_for_key(key: str, world: World, region: str, *,
+                   combat: bool = False, items: tuple[str, ...] = ()) -> str | None:
+    """键盘名 → 动作；数字键只对**当前区域相连**的边生效，避免非法边抛错。
+
+    G7：战斗态（`combat=True`）改用 `COMBAT_KEY_ACTIONS`，数字键按 `items`
+    表序派生 `item:<id>`，不写死道具名；巡图态行为与 G5 完全一致。
+    """
+    table = COMBAT_KEY_ACTIONS if combat else KEY_ACTIONS
+    for name, action in table:
         if name == key:
             return action
     if key.isdigit():
         index = int(key) - 1
+        if combat:
+            if 0 <= index < len(items):
+                return f"item:{items[index]}"
+            return None
         if 0 <= index < len(world.edges):
             edge = world.edges[index]
             if edge.source == region or edge.target == region:
