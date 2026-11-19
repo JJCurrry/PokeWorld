@@ -44,7 +44,7 @@
 - 整体里程碑拆解（当前计划）：`docs/任务架构细分.md`
 - 游戏设计 / 原创溯源 / 合规自评：`docs/GDD-v0.md`
 - 参考实现 / 黄金路径：G0 铸造 `src/schema.py` + `tools/gate.py`，G1 铸造 `src/gen/`，G2 铸造 `src/battle/`，G3 铸造 `src/world/progress.py` + `tools/autoplayer.py`，G4 铸造 `src/world/atlas.py` / `evolution.py` / `scripts.py` / `save.py` / `game.py` + `tools/g4_report.py`，G5 铸造 `src/world/session.py` + `src/view/` + `src/main.py` + `tools/g5_report.py`；清单见 `docs/地图.md`，**未落盘的模块不得假称其存在**。
-- **G4 / G5 / G6 均已由人裁决验收通过；G7 已实施完毕、按 A9 待人裁决验收**（2026-11-17「G6验收通过，开发G7」+ 方向「核心循环可玩化」）。G7 把 G2 战斗 / 捕捉接进 G5 窗口、复用 A11 定稿公式与三表，**零改三表 / 零重建 `MANIFEST.sha256` / 零重拍 golden 快照**；`g7_report G7-a` `complete=true`、四道门 **253 用例**全绿、新增 S7-01~S7-03；「8 潮灵扩充 / 平衡调优」仍须逐次人确认才实施。当前工单 `docs/工单/G7-核心循环可玩化.md`，设计 `ADR-007`（含实施结论）；G6 工单已归档。**AI 不自判 G7 通过、不预支 G8**。当前待裁决 **5 项**（A 组 2 项阻塞：G7 验收 / G8 开工；B 组 3 项可延后），清单见 `docs/接力文件.md`「待人类裁决的问题」。
+- **G0–G7 全部已由人裁决验收通过**（G7 2026-11-19「G7验收通过」）；**G8 未获开工授权**，当前无进行中工单。G7 把 G2 战斗 / 捕捉接进 G5 窗口、复用 A11 定稿公式与三表，**零改三表 / 零重建 `MANIFEST.sha256` / 零重拍 golden 快照**；`g7_report G7-a` `complete=true`、四道门 **253 用例**全绿、新增 S7-01~S7-03；「8 潮灵扩充 / 平衡调优」仍须逐次人确认才实施。G7 工单 `docs/工单/G7-核心循环可玩化.md` 已归档（含「人裁决记录」），设计 `ADR-007`（含实施结论）；G6 工单已归档。**验收是人的裁决（非 AI 自判、非独立冷眼），AI 未写 G8 代码**。当前待裁决 **4 项**（A 组 1 项阻塞：G8 开工；B 组 3 项可延后），清单见 `docs/接力文件.md`「待人类裁决的问题」。
 
 ## 仲裁序（信息源冲突时谁先读）
 
