@@ -19,7 +19,8 @@
 - G1 起：`tests/golden_seed.json` 由 R7 锁定（G1-v3 `3ab574e4…`）；变更须人**逐次**确认后才运行 `python tools/make_golden.py`。三张 `data/*.json` 与 `MANIFEST.sha256` 同样受保护，改动须逐次人确认 + 重建清单（LF）。
 - G6 起：`python tools/gate.py`（R0–R7）、`docs/评审/G6-冷眼.md`（独立会话冷眼，实现者不改结论）、`docs/软著材料清单.md`（清单 + 对应制品路径 + 待补动作，非成品材料）。
 - G7 起：`python tools/g7_report.py [seed]`（默认 `G7-a`）—— 战斗 / 捕捉端到端 JSON（遭遇 → 捕捉 → 图鉴 → 存档 → 读档 + 反证 + 确定性），`complete=true` 表示五项 DoD 机器可判定部分全通过。
-- P1 起（发布工程，非 G8）：双击 `dist/PokeWorld.exe` 直接开玩（自包含，无需 Python/pygame）；重建 `python tools/build_exe.py`（需 `pip install pyinstaller`）。入口 `tools/launcher.py`、工单 `docs/工单/P1-双击可玩发行包.md`、`ADR-008`。
+- G8 起（开放世界）：`python -m src.ow_main --headless [seed]`（默认 `G8-demo`）——连续世界端到端机器事实；`--window` 开相机跟随窗口；`python tools/ow_report.py [seed]` 同报告。设计 `ADR-009`（显式推翻 ADR-001 无缝否决），工单 `docs/工单/G8-无缝开放世界.md`。旧 `python -m src.main --window` 仍可用（分区块原型）。
+- P1 发布工程：双击 `dist/PokeWorld.exe` 开玩（自包含，无需 Python/pygame）；**G8 起双击入口已切到开放世界**（`tools/launcher.py` → `src.ow_main`）。重建 `python tools/build_exe.py`（需 `pip install pyinstaller`）。工单 `docs/工单/P1-双击可玩发行包.md`、`ADR-008`。
 - 细节以 `docs/地图.md`「关键流程入口」为准；本文件不复制命令细节。
 
 ## 判断性原则（仅放无法自动化的；能写成检查的请下沉为 L1）
@@ -45,8 +46,9 @@
 - 整体里程碑拆解（当前计划）：`docs/任务架构细分.md`
 - 游戏设计 / 原创溯源 / 合规自评：`docs/GDD-v0.md`
 - 参考实现 / 黄金路径：G0 铸造 `src/schema.py` + `tools/gate.py`，G1 铸造 `src/gen/`，G2 铸造 `src/battle/`，G3 铸造 `src/world/progress.py` + `tools/autoplayer.py`，G4 铸造 `src/world/atlas.py` / `evolution.py` / `scripts.py` / `save.py` / `game.py` + `tools/g4_report.py`，G5 铸造 `src/world/session.py` + `src/view/` + `src/main.py` + `tools/g5_report.py`；清单见 `docs/地图.md`，**未落盘的模块不得假称其存在**。
-- **G0–G7 全部已由人裁决验收通过**（G7 2026-11-19「G7验收通过」）；**G8 未获开工授权**，当前无进行中里程碑工单。G7 把 G2 战斗 / 捕捉接进 G5 窗口、复用 A11 定稿公式与三表，**零改三表 / 零重建 `MANIFEST.sha256` / 零重拍 golden 快照**；`g7_report G7-a` `complete=true`、四道门 **253 用例**全绿、新增 S7-01~S7-03；「8 潮灵扩充 / 平衡调优」仍须逐次人确认才实施。G7 工单 `docs/工单/G7-核心循环可玩化.md` 已归档（含「人裁决记录」），设计 `ADR-007`（含实施结论）；G6 工单已归档。**验收是人的裁决（非 AI 自判、非独立冷眼），AI 未写 G8 代码**。
-- **P1 发布工程（2026-11-20 · 已实施，非 G8）**：`dist/PokeWorld.exe` 双击即玩（PyInstaller onefile，自包含 Python+pygame+三表，产物不入库）；隔离 PATH 验证通关 / 图鉴 / 存档 / manifest 全绿，四道门仍 253、受保护数据 0 改动。新增 `tools/launcher.py` / `tools/build_exe.py`，工单 `docs/工单/P1-双击可玩发行包.md`、`ADR-008`，限制 P1-01~P1-05。**不是 G8 开工**。当前待裁决 **4 项**（A 组 1 项阻塞：G8 开工；B 组 3 项可延后），清单见 `docs/接力文件.md`「待人类裁决的问题」。
+- **G0–G7 全部已由人裁决验收通过**（G7 2026-11-19「G7验收通过」）。G7 把 G2 战斗 / 捕捉接进 G5 窗口、复用 A11 定稿公式与三表，**零改三表 / 零重建 `MANIFEST.sha256` / 零重拍 golden 快照**；`g7_report G7-a` `complete=true`、四道门 253 用例全绿、新增 S7-01~S7-03。G7 及以前工单均归档（含「人裁决记录」），设计 `ADR-007`。**验收是人的裁决（非 AI 自判、非独立冷眼）**。
+- **G8 开放世界（2026-11-21 · 已获开工授权并实施完毕，待人裁决验收）**：人答「**3，我要做真正的开放世界！**」→ 开工 + 方向 + **明确推翻 ADR-001 无缝否决**，设计 `ADR-009`（supersede）。新增 `src/gen/overworld.py`（连续地形）、`src/world/explore.py`（纯函数探索）、`src/view/overworld_view.py`（相机窗口 + 键位提示折行）、`src/ow_main.py`（新入口）、`tools/ow_report.py`。`ow_report G8-demo` `complete=true`（64×64 连续世界 / 7 地标全部陆路连通 / 走到 r7 / 捕获入图鉴 / 确定性全真）；四道门 **263 用例**全绿（253 + G8 10 条）；**零改三表 / 清单 / golden**。工单 `docs/工单/G8-无缝开放世界.md`。**AI 不自判验收**；「8 潮灵扩充 / 平衡调优」仍须逐次人确认才实施。
+- **P1 发布工程（2026-11-20 · 已实施，非 G8）**：`dist/PokeWorld.exe` 双击即玩（PyInstaller onefile，自包含 Python+pygame+三表，产物不入库），**G8 起双击入口已切到开放世界**；隔离 PATH 验证自包含、受保护数据 0 改动。工单 `docs/工单/P1-双击可玩发行包.md`、`ADR-008`，限制 P1-01~P1-05。当前待裁决 **3 项**（均 B 组、可延后），清单见 `docs/接力文件.md`「待人类裁决的问题」。
 
 ## 仲裁序（信息源冲突时谁先读）
 
