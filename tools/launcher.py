@@ -12,11 +12,40 @@ from __future__ import annotations
 
 import os
 import sys
+import traceback
 from pathlib import Path
 
 FROZEN_ATTR = "_MEIPASS"
 SAVE_DIR_NAME = "saves"
 DEFAULT_SAVE_NAME = "slot1.json"
+DIAG_NAME = "启动诊断.log"
+
+
+def base_dir() -> Path:
+    """exe 所在目录（冻结态）或仓库根（源码态）；诊断与存档都落这里。"""
+    bundle = getattr(sys, FROZEN_ATTR, None)
+    return Path(sys.argv[0]).resolve().parent if isinstance(bundle, str) and bundle \
+        else Path(__file__).resolve().parents[1]
+
+
+def log(message: str) -> None:
+    """追加一行诊断；写失败也不影响游戏。"""
+    try:
+        target = base_dir() / SAVE_DIR_NAME / DIAG_NAME
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open("a", encoding="utf-8") as handle:
+            handle.write(message + "\n")
+    except OSError:
+        pass
+
+
+def show_error(text: str) -> None:
+    """无控制台 exe 里用系统弹窗显示错误，避免静默闪退。"""
+    try:
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(0, text[:1800], "PokeWorld 启动失败", 0x10)
+    except Exception:
+        pass
 
 
 def resource_root() -> Path:
@@ -29,17 +58,16 @@ def resource_root() -> Path:
 
 def save_path() -> Path:
     """存档写入位置：exe 同目录（冻结态）或仓库根（源码态）下的 saves/。"""
-    bundle = getattr(sys, FROZEN_ATTR, None)
-    base = Path(sys.argv[0]).resolve().parent if isinstance(bundle, str) and bundle \
-        else Path(__file__).resolve().parents[1]
-    target = base / SAVE_DIR_NAME / DEFAULT_SAVE_NAME
+    target = base_dir() / SAVE_DIR_NAME / DEFAULT_SAVE_NAME
     target.parent.mkdir(parents=True, exist_ok=True)
     return target
 
 
-def main() -> int:
-    """启动窗口模式；路径参数显式注入，避免依赖当前工作目录。"""
+def _boot() -> int:
+    """真正的启动流程，独立成函数以便统一捕获异常。"""
+    log("启动：begin")
     root = resource_root()
+    log("资源根：" + str(root))
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
 
@@ -51,9 +79,26 @@ def main() -> int:
     import g5_report
     gate.ROOT = root
     g5_report.ROOT = root
+    log("模块导入：ok")
 
     os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
-    return app.main(["--window", "--path", str(save_path())])
+    path = save_path()
+    log("存档路径：" + str(path))
+    log("进入窗口循环")
+    code = app.main(["--window", "--path", str(path)])
+    log("窗口循环返回：code=" + str(code))
+    return code
+
+
+def main() -> int:
+    """启动窗口模式；任何异常都落日志并弹窗，避免无控制台 exe 静默闪退。"""
+    try:
+        return _boot()
+    except Exception as exc:  # 无控制台下必须兜底；SystemExit 等正常退出不当崩溃
+        detail = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+        log("崩溃：\n" + detail)
+        show_error("启动时出错，详情已写入 saves/启动诊断.log：\n\n" + str(exc)[:600])
+        return 1
 
 
 if __name__ == "__main__":
