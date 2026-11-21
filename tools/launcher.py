@@ -73,18 +73,21 @@ def _boot() -> int:
 
     # 已验收模块的 ROOT 均在模块级按 __file__ 计算，冻结态会指向临时目录而非资源根；
     # 在调用前逐个覆盖为资源根，使读表 / 报告自检从包内资源取数，零改这些模块源码。
-    from src import main as app
+    # G8 起双击入口改为 src.ow_main（连续开放世界）；旧 src.main 入口仍保留可命令行调用。
+    from src import ow_main as app
     app.ROOT = root
+    import ow_report
+    ow_report.ROOT = root
     import gate
     import g5_report
     gate.ROOT = root
     g5_report.ROOT = root
-    log("模块导入：ok")
+    log("模块导入：ok（开放世界入口）")
 
     os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
     path = save_path()
     log("存档路径：" + str(path))
-    log("进入窗口循环")
+    log("进入开放世界窗口循环")
     code = app.main(["--window", "--path", str(path)])
     log("窗口循环返回：code=" + str(code))
     return code

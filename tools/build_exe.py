@@ -21,7 +21,7 @@ SPEC_TEMPLATE = '''# -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_submodules
 
 block_cipher = None
-hidden = collect_submodules("src") + ["autoplayer", "g5_report"]
+hidden = collect_submodules("src") + ["autoplayer", "g5_report", "ow_report"]
 
 a = Analysis(
     ["{launcher}"],
