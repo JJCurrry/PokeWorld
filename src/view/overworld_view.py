@@ -138,13 +138,18 @@ def _draw_landmarks(surface: object, pygame: object, tables: dict,
 
 
 def _draw_player(surface: object, pygame: object, explore: Explore,
-                 gx0: int, gy0: int, atlas: dict, frame: int) -> None:
+                 gx0: int, gy0: int, atlas: dict, frame: int,
+                 landmarks: tuple = ()) -> None:
     px = VIEW_ORIGIN[0] + (explore.x - gx0) * TILE + TILE // 2
     py = VIEW_ORIGIN[1] + (explore.y - gy0) * TILE + TILE // 2
     image = atlas.get("player")
     if image is not None:
         bob = -2 if frame % 8 < 4 else 0  # 帧计数驱动的轻微踏步（零时钟）
-        _blit_centered(surface, image, px, py - 6, PLAYER_DISPLAY, pygame, bob)
+        # 站在地标中心时向脚下偏移，露出身后建筑；纯渲染，不改逻辑坐标
+        on_landmark = any(abs(explore.x - lx) < 1 and abs(explore.y - ly) < 1
+                          for _, lx, ly in landmarks)
+        offset = 12 if on_landmark else -6
+        _blit_centered(surface, image, px, py + offset, PLAYER_DISPLAY, pygame, bob)
         return
     pygame.draw.circle(surface, (255, 224, 180), (px, py - 8), 7)      # 头
     pygame.draw.rect(surface, (72, 132, 220), (px - 8, py - 2, 16, 16))  # 身
@@ -224,7 +229,8 @@ def run_world(tables: dict, seed: str, *, max_frames: int | None = None,
         region = explore.current_region(tables, world)
         _draw_landmarks(surface, pygame, tables, seed, frames,
                         gx0, gy0, cols, rows, region, font, atlas)
-        _draw_player(surface, pygame, world, gx0, gy0, atlas, frames)
+        _draw_player(surface, pygame, world, gx0, gy0, atlas, frames,
+                     overworld.landmarks(tables))
         if world.battle is not None and world.battle.wild is not None:
             _draw_creature(surface, pygame, tables, world.battle.wild.cid,
                            PANEL_X + 180, PANEL_TOP + 250, atlas, frames)
