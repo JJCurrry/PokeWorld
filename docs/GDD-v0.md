@@ -82,6 +82,16 @@
 | 图鉴登记项（G4） | 程序派生：`(cid, region, terrain, phase)` 由 `generate_chunk` 的地形计数与时段权重机械生成 | 自有 | 无独立文案资产；不新增潮灵条目，R5 的 8 潮灵逐行登记保持不变 |
 | 界面文案 / 键位提示（G5） | **原创中文短句**（AI 草案）：`src/view/layout.py::HELP_TEXT` / `IDLE_TEXT` / `PHASE_LABELS` 与 `src/world/scripts.py::SCRIPT_ROWS` 复用文案，`window.py` 的「巡游中 / 通关」 | 自有 | 2026-11-16 登记；`gate.BANNED_WORDS` 归一化自检零命中（`tests/test_g5_layout.py::test_ui_text_passes_r4_third_party_ip_wordlist`）；**B 级品味与观感归人复核，尚未定稿** |
 | 窗口标题 / 配色 / 布局（G5） | 原创（`PokeWorld · 潮屿巡游`、4 色地形 `PALETTE`、960×600 窗口 / 48 px 格） | 自有 | 2026-11-16 登记；纯代码常量，不写入受保护三表；观感归人复核 |
+| 潮灵美术 `c01` 汐芽（G8/S8-01） | 原创 AI 生成：提示词「tide-type sprout creature, teal water-sprout with leaf fins and dew drop」；生成工具 Hunyuan ImageGen；加工 `tools/prepare_assets.py`；成品 `assets/sprites/creatures/c01.png` | 自有（AI 生成） | 2026-11-21 登记；源图存 `assets/sprites/_raw/creatures/source.png` 供溯源；造型原创、禁止近似任何版权角色；**AI 生成内容商用政策待核**（自用不上架） |
+| 潮灵美术 `c02` 潮鳍（G8/S8-01） | 同上精灵表第 2 格；提示词「blue aquatic creature with flowing fin ears」；成品 `assets/sprites/creatures/c02.png` | 自有（AI 生成） | 同上；源图 `_raw/creatures/source.png` |
+| 潮灵美术 `c03` 苔团（G8/S8-01） | 同上精灵表第 3 格；提示词「round green moss ball with tiny leaves」；成品 `assets/sprites/creatures/c03.png` | 自有（AI 生成） | 同上；源图 `_raw/creatures/source.png` |
+| 潮灵美术 `c04` 砾崽（G8/S8-01） | 同上精灵表第 4 格；提示词「small grey-brown rock kid with cracked shell」；成品 `assets/sprites/creatures/c04.png` | 自有（AI 生成） | 同上；源图 `_raw/creatures/source.png` |
+| 潮灵美术 `c05` 烬尾（G8/S8-01） | 同上精灵表第 5 格；提示词「warm orange-red creature with flickering tail flame」；成品 `assets/sprites/creatures/c05.png` | 自有（AI 生成） | 同上；源图 `_raw/creatures/source.png` |
+| 潮灵美术 `c06` 鸣弧（G8/S8-01） | 同上精灵表第 6 格；提示词「pale violet creature with zigzag antenna and spark accents」；成品 `assets/sprites/creatures/c06.png` | 自有（AI 生成） | 同上；源图 `_raw/creatures/source.png` |
+| 潮灵美术 `c07` 霜绒（G8/S8-01） | 同上精灵表第 7 格；提示词「soft icy white-blue fluffy creature with crystal ears」；成品 `assets/sprites/creatures/c07.png` | 自有（AI 生成） | 同上；源图 `_raw/creatures/source.png` |
+| 潮灵美术 `c08` 岩铠（G8/S8-01） | 同上精灵表第 8 格；提示词「sturdy slate-grey armored creature with plate shoulders」；成品 `assets/sprites/creatures/c08.png` | 自有（AI 生成） | 同上；源图 `_raw/creatures/source.png` |
+| 地标美术 r1–r7（G8/S8-01） | 原创 AI 生成：第二张 4×2 精灵表，提示词逐格「coastal town house / grassy training hall / rocky cave / lighthouse harbor / shipwreck / volcanic island gym / grand league stadium」；工具 Hunyuan ImageGen；加工 `tools/prepare_assets.py`；成品 `assets/sprites/landmarks/r1.png`…`r7.png` | 自有（AI 生成） | 2026-11-21 登记；按 `topology.json` 区域顺序对应 r1 汐湾镇…r7 联盟，不写死名称于代码；源图 `_raw/landmarks/source.png`；商用政策待核 |
+| 玩家角色美术（G8/S8-01） | 原创 AI 生成：提示词「young wanderer with teal-blue hooded cloak, satchel bag, compass」；工具 Hunyuan ImageGen；加工 `tools/prepare_assets.py`；成品 `assets/sprites/player.png` | 自有（AI 生成） | 2026-11-21 登记；源图 `_raw/player/source.png`；原创形象、无第三方 IP 特征；商用政策待核 |
 
 > 上表 8 个潮灵由规则门 **R5 asset_provenance** 机器核对：必须按 `| 潮灵 \`cNN\` 名称 |` **逐行登记**且名称与 `data/species.json` 一致；在正文任意位置提及不算登记，否则验证墙撞墙（终局复核 N-03 口径同步）。
 >
