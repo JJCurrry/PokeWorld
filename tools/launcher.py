@@ -85,6 +85,10 @@ def _boot() -> int:
     log("模块导入：ok（开放世界入口）")
 
     os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
+    # G8/S8-01：资产目录是否随包解出（机器事实，不含观感结论）
+    from src.view import asset_atlas
+    log("资产目录：" + str(asset_atlas.asset_path("player.png")) +
+        " 就绪=" + str(asset_atlas.available()))
     path = save_path()
     log("存档路径：" + str(path))
     log("进入开放世界窗口循环")

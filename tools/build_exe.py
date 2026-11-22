@@ -33,6 +33,10 @@ a = Analysis(
         ("{root}/data/encounters.json", "data"),
         ("{root}/data/MANIFEST.sha256", "data"),
         ("{root}/tests/golden_seed.json", "tests"),
+        # G8/S8-01 原创美术资产（成品 PNG；_raw 源图与预览图不打进发行包）
+        ("{root}/assets/sprites/player.png", "assets/sprites"),
+        ("{root}/assets/sprites/creatures", "assets/sprites/creatures"),
+        ("{root}/assets/sprites/landmarks", "assets/sprites/landmarks"),
     ],
     hiddenimports=hidden,
     hookspath=[],

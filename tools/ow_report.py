@@ -18,6 +18,7 @@ if str(ROOT / "tools") not in sys.path:
 
 from src import schema                      # noqa: E402
 from src.gen import overworld               # noqa: E402
+from src.view import asset_atlas            # noqa: E402
 from src.world import explore               # noqa: E402
 from src.world.progress import coverage     # noqa: E402
 
@@ -72,6 +73,7 @@ def run(tables: dict, seed: str = DEFAULT_SEED) -> dict:
             "edges": len(world["edges"]),
         },
         "view": {"headless": True, "continuous_movement": True},
+        "art": asset_atlas.facts(),  # 只证明资产就位与文件数，不证明品味 / 观感（B 级归人）
         "complete": bool(
             explore.is_complete(tables, finished)
             and walkable_landmarks
