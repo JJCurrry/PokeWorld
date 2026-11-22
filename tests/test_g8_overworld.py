@@ -115,5 +115,54 @@ class WindowSmoke(unittest.TestCase):
         self.assertGreaterEqual(result["cells_drawn"], 1)
 
 
+class ArtAssets(unittest.TestCase):
+    """G8/S8-01 原创美术资产：文件就位、真透明、稳定名、缺图降级。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tables = schema.load_all(ROOT)
+
+    def test_all_assets_present_with_alpha(self):
+        from src.view import asset_atlas
+        self.assertTrue(asset_atlas.available())
+        facts = asset_atlas.facts()
+        self.assertEqual(facts["creatures"], 8)
+        self.assertEqual(facts["landmarks"], 7)
+        self.assertTrue(facts["player"])
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("PIL 不可用：alpha 检查优雅跳过")
+        for index in range(1, 9):
+            path = asset_atlas.asset_path(f"creatures/c{index:02d}.png")
+            image = Image.open(path).convert("RGBA")
+            self.assertEqual(image.getchannel("A").getextrema()[0], 0,
+                             f"c{index:02d} 背景未透明")
+        for index in range(1, 8):
+            path = asset_atlas.asset_path(f"landmarks/r{index}.png")
+            image = Image.open(path).convert("RGBA")
+            self.assertEqual(image.getchannel("A").getextrema()[0], 0,
+                             f"r{index} 背景未透明")
+
+    def test_provenance_registered_for_each_asset(self):
+        gdd = (ROOT / "docs" / "GDD-v0.md").read_text(encoding="utf-8")
+        for index in range(1, 9):
+            self.assertIn(f"潮灵美术 `c{index:02d}`", gdd)
+        self.assertIn("地标美术 r1–r7", gdd)
+        self.assertIn("玩家角色美术", gdd)
+
+    @unittest.skipUnless(deps.pygame_available(), "pygame 不可用：窗口用例优雅跳过")
+    def test_smoke_reports_art_loaded(self):
+        os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+        os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
+        from src.view.overworld_view import smoke
+        result = smoke(self.tables, SEED, max_frames=2)
+        self.assertTrue(result["ok"])
+        art = result["art"]
+        self.assertTrue(art["player"])
+        self.assertEqual(art["creatures"], 8)
+        self.assertEqual(art["landmarks"], 7)
+
+
 if __name__ == "__main__":
     unittest.main()

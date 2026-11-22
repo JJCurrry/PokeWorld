@@ -1,12 +1,15 @@
-"""G8 开放世界窗口（ADR-009）：连续地图 + 相机跟随 + 几何精灵。
+"""G8 开放世界窗口（ADR-009 + ADR-010）：连续地图 + 相机跟随 + 原创美术资产。
 
 - 顶层零 pygame import，仅 `run_world` 内经 `require_pygame()` 延迟导入（G5 契约）。
 - 渲染层只读 `Explore`（纯快照），不回写状态；世界变更只经 `explore.apply`。
-- 动画相位由帧计数驱动（不读时钟，R1）；潮灵 / 建筑 / 角色为原创几何图形，
-  零外部素材（不变量 #7）。键位提示折行完整显示，修复 G7 截断问题。
+- 动画相位由帧计数驱动（不读时钟，R1）；角色 / 潮灵 / 地标来自 `asset_atlas`
+  加载的原创 PNG（不变量 #7，GDD §6 逐项登记），缺图自动回退原几何绘制。
+- 地形在纯色底上叠加程序生成的纹理与光影（零外部素材、零随机、零时钟）。
+- 键位提示折行完整显示，修复 G7 截断问题。
 """
 from __future__ import annotations
 
+from . import asset_atlas
 from .deps import require_pygame
 from ..gen import overworld
 from ..world import explore
@@ -20,6 +23,9 @@ PANEL_TOP = 16
 LINE_HEIGHT = 27
 FONT_SIZE = 17
 FPS_STEP = 1  # 帧计数步长（非时钟）
+CREATURE_DISPLAY = (92, 92)   # 战斗中潮灵面板显示尺寸
+PLAYER_DISPLAY = (46, 62)     # 玩家在地图上的显示尺寸
+LANDMARK_DISPLAY = (66, 66)   # 地标建筑显示尺寸
 
 HELP_LINES = (
     "方向键 移动 · N 交谈 · S 巡查 · B 遭遇",
@@ -45,42 +51,68 @@ def _make_font(pygame: object) -> object:
 
 def _palette(pygame: object, terrain: str) -> tuple[int, int, int]:
     """地形 → 颜色；按地形名做稳定哈希，代码零地形名字面量映射。"""
-    table = ((54, 140, 74), (30, 96, 52), (64, 150, 196), (24, 74, 138))
+    table = ((92, 158, 88), (46, 112, 66), (96, 178, 206), (36, 104, 164))
     index = sum(ord(ch) for ch in terrain) % len(table)
     return table[index]
+
+
+def _shade(color: tuple[int, int, int], amount: float) -> tuple[int, int, int]:
+    """按亮度系数派生同色系明暗，用于程序光影（零随机、零外部素材）。"""
+    return tuple(max(0, min(255, round(channel * amount))) for channel in color)
 
 
 def _draw_ground(surface: object, pygame: object, tables: dict,
                  seed: str, frame: int, gx0: int, gy0: int,
                  cols: int, rows: int) -> None:
+    """地形底图：纯色 + 棋盘微差 + 高度光影 + 草/水/林纹理（全确定性派生）。"""
     for row in range(rows):
         for col in range(cols):
             wx, wy = gx0 + col, gy0 + row
             terrain = overworld.terrain_at(tables, seed, wx + 0.5, wy + 0.5)
-            color = _palette(pygame, terrain)
+            base = _palette(pygame, terrain)
             rect = pygame.Rect(VIEW_ORIGIN[0] + col * TILE, VIEW_ORIGIN[1] + row * TILE,
                                TILE, TILE)
-            pygame.draw.rect(surface, color, rect)
-            pygame.draw.rect(surface, (18, 30, 26), rect, 1)
+            pygame.draw.rect(surface, base, rect)
+            # 相邻格微差 + 高度坡度光影：让连片地形显出层次而非一整块纯色
+            checker = 1.0 if (wx + wy) % 2 == 0 else 0.94
             h = overworld.height_at(seed, wx + 0.5, wy + 0.5)
+            h_right = overworld.height_at(seed, wx + 1.5, wy + 0.5)
+            slope = max(-0.08, min(0.08, (h - h_right) * 0.4))
+            pygame.draw.rect(surface, _shade(base, checker + slope), rect, 2)
             cx, cy = rect.centerx, rect.centery
-            if h < 0.42:  # 水域：波纹（相位由帧计数驱动）
-                phase = (frame + wx + wy) % 6
-                pygame.draw.line(surface, (150, 210, 240),
-                                 (cx - 8, cy - 4 + phase // 3),
-                                 (cx + 8, cy - 4 + phase // 3), 1)
-            elif h < 0.7:  # 草地：小草点
-                pygame.draw.line(surface, (120, 190, 110),
-                                 (cx - 5, cy + 6), (cx - 5, cy - 2), 1)
-                pygame.draw.line(surface, (120, 190, 110),
-                                 (cx + 4, cy + 6), (cx + 4, cy + 1), 1)
-            else:  # 密林：树冠
-                pygame.draw.circle(surface, (22, 74, 40), (cx, cy - 2), 9)
+            if h < 0.42:  # 水域：双层波纹（相位由帧计数驱动）
+                phase = (frame + wx * 2 + wy) % 8
+                light = _shade(base, 1.45)
+                pygame.draw.line(surface, light, (cx - 9, cy - 5 + phase // 4),
+                                 (cx + 3, cy - 5 + phase // 4), 2)
+                pygame.draw.line(surface, light, (cx - 3, cy + 3 - phase // 4),
+                                 (cx + 9, cy + 3 - phase // 4), 1)
+            elif h < 0.7:  # 草地：成簇草叶 + 小花点
+                grass = _shade(base, 0.62)
+                bloom = (250, 214, 122)
+                for dx, dy in ((-7, 4), (0, 7), (6, 3)):
+                    pygame.draw.line(surface, grass, (cx + dx, cy + dy),
+                                     (cx + dx - 1, cy + dy - 5), 1)
+                if (wx * 3 + wy * 7) % 9 == 0:
+                    pygame.draw.circle(surface, bloom, (cx + 4, cy - 4), 2)
+            else:  # 密林：层叠树冠 + 高光
+                dark = _shade(base, 0.66)
+                light = _shade(base, 1.28)
+                pygame.draw.circle(surface, dark, (cx - 4, cy + 1), 10)
+                pygame.draw.circle(surface, base, (cx + 4, cy - 2), 9)
+                pygame.draw.circle(surface, light, (cx + 1, cy - 6), 4)
+
+
+def _blit_centered(surface: object, image: object, px: int, py: int,
+                   size: tuple[int, int], pygame: object, bob: int = 0) -> None:
+    scaled = pygame.transform.smoothscale(image, size)
+    surface.blit(scaled, (px - size[0] // 2, py - size[1] // 2 + bob))
 
 
 def _draw_landmarks(surface: object, pygame: object, tables: dict,
                     seed: str, frame: int, gx0: int, gy0: int,
-                    cols: int, rows: int, current: str, font: object) -> None:
+                    cols: int, rows: int, current: str, font: object,
+                    atlas: dict) -> None:
     palette = ((240, 196, 96), (232, 120, 120), (168, 142, 232),
                (120, 200, 232), (240, 160, 96), (200, 220, 120), (220, 220, 240))
     for index, (rid, lx, ly) in enumerate(overworld.landmarks(tables)):
@@ -88,22 +120,32 @@ def _draw_landmarks(surface: object, pygame: object, tables: dict,
             continue
         px = VIEW_ORIGIN[0] + (lx - gx0) * TILE + TILE // 2
         py = VIEW_ORIGIN[1] + (ly - gy0) * TILE + TILE // 2
-        color = palette[index % len(palette)]
-        pygame.draw.polygon(surface, color,
-                            [(px, py - 14), (px + 13, py + 10), (px - 13, py + 10)])
-        pygame.draw.rect(surface, (250, 240, 210), (px - 5, py + 2, 10, 8))
+        image = atlas.get("landmarks", {}).get(rid)
+        if image is not None:
+            # 建筑略上移，使站在地标中心的玩家像在建筑门前而非被压在屋顶下
+            _blit_centered(surface, image, px, py - 20, LANDMARK_DISPLAY, pygame)
+        else:  # 缺图降级：原几何房顶
+            color = palette[index % len(palette)]
+            pygame.draw.polygon(surface, color,
+                                [(px, py - 26), (px + 13, py - 2), (px - 13, py - 2)])
+            pygame.draw.rect(surface, (250, 240, 210), (px - 5, py - 10, 10, 8))
         name = str(tables["topology.json"]["regions"][index]["name"])
         label = font.render(name, True, (255, 255, 255))
-        surface.blit(label, (px - 12, py + 12))
+        surface.blit(label, (px - 12, py + 22))
         if rid == current:
-            pulse = 16 + (frame % 8)
+            pulse = 38 + (frame % 10)
             pygame.draw.circle(surface, (255, 230, 120), (px, py), pulse, 2)
 
 
 def _draw_player(surface: object, pygame: object, explore: Explore,
-                 gx0: int, gy0: int) -> None:
+                 gx0: int, gy0: int, atlas: dict, frame: int) -> None:
     px = VIEW_ORIGIN[0] + (explore.x - gx0) * TILE + TILE // 2
     py = VIEW_ORIGIN[1] + (explore.y - gy0) * TILE + TILE // 2
+    image = atlas.get("player")
+    if image is not None:
+        bob = -2 if frame % 8 < 4 else 0  # 帧计数驱动的轻微踏步（零时钟）
+        _blit_centered(surface, image, px, py - 6, PLAYER_DISPLAY, pygame, bob)
+        return
     pygame.draw.circle(surface, (255, 224, 180), (px, py - 8), 7)      # 头
     pygame.draw.rect(surface, (72, 132, 220), (px - 8, py - 2, 16, 16))  # 身
     pygame.draw.rect(surface, (48, 84, 150), (px - 8, py + 14, 6, 8))   # 脚
@@ -111,7 +153,12 @@ def _draw_player(surface: object, pygame: object, explore: Explore,
 
 
 def _draw_creature(surface: object, pygame: object, tables: dict,
-                   cid: str, cx: int, cy: int) -> None:
+                   cid: str, cx: int, cy: int, atlas: dict, frame: int) -> None:
+    image = atlas.get("creatures", {}).get(cid)
+    if image is not None:
+        bob = -3 if frame % 10 < 5 else 0
+        _blit_centered(surface, image, cx, cy, CREATURE_DISPLAY, pygame, bob)
+        return
     row = next((c for c in tables["species.json"]["creatures"] if c["id"] == cid), None)
     base = ((120, 200, 220), (200, 170, 120), (150, 200, 140),
             (220, 140, 140), (180, 150, 220), (230, 190, 110),
@@ -159,6 +206,7 @@ def run_world(tables: dict, seed: str, *, max_frames: int | None = None,
     surface = pygame.display.set_mode(WINDOW_SIZE)
     pygame.display.set_caption("PokeWorld · 潮屿巡游（开放世界）")
     font = _make_font(pygame)
+    atlas = asset_atlas.load_all(pygame)
     world = explore.new_explore(tables, seed)
     limit = max_frames if max_frames is not None else 10 ** 9
     cols = (WINDOW_SIZE[0] - VIEW_ORIGIN[0] - PANEL_X) // TILE
@@ -175,13 +223,19 @@ def run_world(tables: dict, seed: str, *, max_frames: int | None = None,
         _draw_ground(surface, pygame, tables, seed, frames, gx0, gy0, cols, rows)
         region = explore.current_region(tables, world)
         _draw_landmarks(surface, pygame, tables, seed, frames,
-                        gx0, gy0, cols, rows, region, font)
-        _draw_player(surface, pygame, world, gx0, gy0)
+                        gx0, gy0, cols, rows, region, font, atlas)
+        _draw_player(surface, pygame, world, gx0, gy0, atlas, frames)
         if world.battle is not None and world.battle.wild is not None:
             _draw_creature(surface, pygame, tables, world.battle.wild.cid,
-                           PANEL_X + 180, PANEL_TOP + 250)
-        pygame.draw.rect(surface, (14, 22, 34),
-                         pygame.Rect(PANEL_X, 0, WINDOW_SIZE[0] - PANEL_X, WINDOW_SIZE[1]))
+                           PANEL_X + 180, PANEL_TOP + 250, atlas, frames)
+        # 侧栏：深色渐变底 + 顶部高光条 + 分隔线，替代原纯色块
+        panel = pygame.Rect(PANEL_X, 0, WINDOW_SIZE[0] - PANEL_X, WINDOW_SIZE[1])
+        pygame.draw.rect(surface, (18, 30, 46), panel)
+        pygame.draw.rect(surface, (42, 78, 112),
+                         pygame.Rect(PANEL_X, 0, panel.width, 4))
+        pygame.draw.line(surface, (58, 96, 132),
+                         (PANEL_X + 8, PANEL_TOP + 8 * LINE_HEIGHT - 6),
+                         (WINDOW_SIZE[0] - 12, PANEL_TOP + 8 * LINE_HEIGHT - 6), 1)
         for index, line in enumerate(_panel_lines(world, tables, region, frames)):
             surface.blit(font.render(line, True, (230, 240, 248)),
                          (PANEL_X + 12, PANEL_TOP + index * LINE_HEIGHT))
@@ -229,6 +283,11 @@ def run_world(tables: dict, seed: str, *, max_frames: int | None = None,
         "region": explore.current_region(tables, world),
         "complete": explore.is_complete(tables, world),
         "actions": tuple(actions),
+        "art": {
+            "player": atlas.get("player") is not None,
+            "creatures": len(atlas.get("creatures", {})),
+            "landmarks": len(atlas.get("landmarks", {})),
+        },
     }
 
 
