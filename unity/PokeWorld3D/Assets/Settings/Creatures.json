@@ -1,0 +1,36 @@
+{
+  "species": [
+    {
+      "id": "c01",
+      "name": "creature_01"
+    },
+    {
+      "id": "c02",
+      "name": "creature_02"
+    },
+    {
+      "id": "c03",
+      "name": "creature_03"
+    },
+    {
+      "id": "c04",
+      "name": "creature_04"
+    },
+    {
+      "id": "c05",
+      "name": "creature_05"
+    },
+    {
+      "id": "c06",
+      "name": "creature_06"
+    },
+    {
+      "id": "c07",
+      "name": "creature_07"
+    },
+    {
+      "id": "c08",
+      "name": "creature_08"
+    }
+  ]
+}

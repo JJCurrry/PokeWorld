@@ -1,0 +1,31 @@
+{
+  "primary": "#4A9EA8",
+  "secondary": "#E8C88A",
+  "danger": "#D9534F",
+  "background": "#E6EEF2",
+  "uiBase": "#22384A",
+  "lightness": {
+    "background": [
+      0.9,
+      0.96
+    ],
+    "terrain": [
+      0.62,
+      0.7
+    ],
+    "character": [
+      0.35,
+      0.45
+    ],
+    "effect": [
+      0.75,
+      0.82
+    ]
+  },
+  "taboo": [
+    "写实材质",
+    "纯黑描边",
+    "第三方 IP 造型",
+    "在世艺术家个人风格"
+  ]
+}

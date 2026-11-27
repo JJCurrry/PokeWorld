@@ -1,0 +1,20 @@
+{
+  "gates": [
+    {
+      "region": "echo_cave",
+      "atlasRequired": 3
+    },
+    {
+      "region": "wreck_reef",
+      "atlasRequired": 6
+    },
+    {
+      "region": "ash_isle",
+      "atlasRequired": 9
+    },
+    {
+      "region": "league",
+      "atlasRequired": 12
+    }
+  ]
+}
