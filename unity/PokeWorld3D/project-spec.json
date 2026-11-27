@@ -1,0 +1,37 @@
+{
+  "requiredDirs": [
+    "Assets",
+    "Assets/Scripts",
+    "Assets/Scripts/Editor",
+    "Assets/Scripts/Core",
+    "Assets/Scripts/View",
+    "Assets/Art",
+    "Assets/Art/Materials",
+    "Assets/Art/Prefabs",
+    "Assets/Audio",
+    "Assets/Prefabs",
+    "Assets/Scenes",
+    "Assets/Settings",
+    "Packages",
+    "ProjectSettings",
+    "docs"
+  ],
+  "recommendedDirs": [
+    "Assets/Scripts/Editor"
+  ],
+  "requiredFiles": [
+    "ProjectSettings/ProjectVersion.txt",
+    "Packages/manifest.json"
+  ],
+  "requireMetaForEveryAsset": true,
+  "requireScenesInBuildSettings": true,
+  "scanAbsolutePaths": true,
+  "scanDanglingGuids": true,
+  "danglingGuidLevel": "warn",
+  "builtinGuidAllowlist": [],
+  "extraGuidDirs": [],
+  "requireFrozenDesign": true,
+  "traceMarker": "@trace",
+  "compileLogPath": "",
+  "ignore": []
+}
