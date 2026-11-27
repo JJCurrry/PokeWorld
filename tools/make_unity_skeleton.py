@@ -596,17 +596,25 @@ def build(root: Path, version: str) -> dict:
     for rel, text in files.items():
         _write(root, rel, text)
 
-    # .meta 配对：目录 + 文件，GUID 由相对路径哈希唯一派生。
+    # .meta 配对：只有 Assets/ 内部的目录与文件才需要元数据；
+    # Packages/ / ProjectSettings/ / docs/ 是工程根级目录，Unity 不会给它们生成 .meta。
     for rel in DIRS:
-        if rel == "Assets":
-            continue
-        _meta_dir(root, rel)
+        if rel.startswith("Assets/"):
+            _meta_dir(root, rel)
     for rel in files:
         if rel.startswith("Assets/"):
             _meta_file(root, rel)
 
+    # 清理旧版本生成的多余根级 .meta（幂等重跑）。
+    for rel in ("Assets.meta", "Packages.meta", "ProjectSettings.meta", "docs.meta"):
+        stale = root / rel
+        if stale.is_file():
+            stale.unlink()
+
+    asset_dirs = [r for r in DIRS if r.startswith("Assets/")]
+    asset_files = [r for r in files if r.startswith("Assets/")]
     return {"version": version, "dirs": len(DIRS), "files": len(files),
-            "metas": len([r for r in DIRS if r != "Assets"]) + len([r for r in files if r.startswith("Assets/")])}
+            "metas": len(asset_dirs) + len(asset_files)}
 
 
 def main(argv: list[str] | None = None) -> int:
