@@ -44,6 +44,16 @@
 - **S9-03**：手绘风资产需原创生成 + 逐项溯源登记；AI 生成商用政策仍"待核"（自用不上架口径延续）。
 - **继承缺口**：S3-01/S3-02、S4-01~S4-05、S5-01~S5-07、S6-01~S6-03、S7-01~S7-03、S8-01~S8-03 全部照登；旧 Python 工程冻结归档，不在 G9 范围内修。
 
+## 实测证据（2026-11-27）
+
+- **阶段一策划案 + 冻结清单**：`docs/GDD-v1-3D可玩独立原型.md`（15 章 + 三类待确认清单；伤害 / 捕捉公式均附定义域与极值验算；手绘风落六字段锚点 + 色号 + 明度阶梯）；`docs/design-freeze.json` `version=1` / `status=frozen` / `frozenAt=2026-11-27`，17 条需求（已确认 12，未确认 5 = `PLAT-001` / `NUM-001` / `NUM-002` / `NUM-003` / `LEV-001`）。
+- **工程骨架**：`unity/PokeWorld3D/`，由 `tools/make_unity_skeleton.py` 确定性生成；15 目录 / 22 文件 / 28 个 meta；13 个 C# 脚本，含 `GameBootstrap`（带 `[GameBootstrap]` 标签日志 + 可见地面/玩家/潮灵）、`PlayerController3D`（WASD）、`FollowCamera`（跟随）、`BattleSystem`（六态唯一转移）、`EncounterSystem`（8m 警戒/20m 脱战）、`AbilityGate`（数据驱动、零能力名字面量）、`AtlasSystem` / `SaveSystem`、View 三件、Editor 场景生成器（不手写带引用场景 YAML）。
+- **工程自检（官方脚本）**：`check_unity_project.py ... --spec --freeze --json` → **错误 0 / 警告 2，结论通过**。通过项含：布局 15 目录 + 2 文件、manifest 3 依赖、meta 配对 17 文件 + 11 目录、GUID 28 个唯一、场景 1 个已入构建列表、构建列表条目有效、C# 13 脚本、无悬空 GUID、无机器绝对路径、**引用覆盖率 12/12 = 100%**。两条警告如实保留：`projectVersion` 版本占位 `0.0.0-PENDING` 需人工确认；5 条未确认条目不应开发（本轮未写其实现）。报告 `unity/PokeWorld3D/unity-check-report.json`。
+- **旧工程零污染**：`python tools/verify_all.py` → **268 用例 ALL GATES GREEN**（skipped=3）；`python tools/gate.py` → `GATE OK`；`git diff -- data/ tests/golden_seed.json` = 0 行。
+- **自检发现的真实问题已修**：① 首轮 trace 行把中文注释当编号 → 压成纯编号（生成器同步修正）；② 首轮无场景文件 → 补零 GUID 引用的最小空场景，由 Editor 脚本首次打开重建；③ 根级 `Packages/`、`ProjectSettings/`、`docs/` 被误造 `.meta` → 生成器改为只给 `Assets/` 内部生成，重跑自检仍绿。
+- **提交口径超限登记**：① `c20ac26`（生成器 625 行）超 ≤400 行；② 一批场景/配置 8 文件、一批表现层 11 文件超 ≤5 文件口径。均因生成器与工程骨架为整体产物、按目录批次提交，如实登记不掩饰。
+
 ## 变更记录
 
 - 2026-11-27 AI：立单，逐字落 P1–P6 人裁决原文与边界；新增 `ADR-011`；A9 两件事（G8 验收不通过 / G9 开工）分开落单；三处清单同步。尚未写策划案与工程代码。
+- 2026-11-27 AI：完成阶段一策划案 + 冻结清单 + 工程骨架 + 核心 C# 系统；官方自检 0 错误 / 2 警告通过、覆盖率 100%；旧工程 268 用例全绿、受保护数据零改；分笔提交并推送，超限口径如上登记。**本机无 Unity（S9-01）→ 未编译、未进播放模式，不宣称可玩**；G9 验收待人裁决，AI 不自判。
