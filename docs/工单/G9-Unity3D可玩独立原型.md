@@ -39,8 +39,9 @@
 
 ## 已知缺口（登记在先，不因交付而抹去）
 
-- **S9-01**：本机无 Unity 安装 → 无法真实编译 / 进入播放模式验证；所有"可运行"结论只能标为"结构自检通过、编译待验"，不冒充可玩。
-- **S9-02**：Unity 版本 / 包版本未核验，工程骨架版本字段为显式假设占位，须人确认或由 Hub 新建工程覆盖。
+- **S9-01**：Unity 引擎已装（团结引擎 2022.3.62f3c1，5.7 GB），但本机为云服务器无 GPU / 显示子系统，Unity.exe 无法完成启动初始化（`-batchmode` 退出码 140063、`-version` 退出 31、不写日志）→ 仍无法真实编译 / 进入播放模式；所有"可运行"结论只能标为"结构自检通过、编译待验"，不冒充可玩。
+- **S9-02（2026-11-27 已消项）**：装上的真实版本 `2022.3.62f3c1` 已回填 `ProjectVersion.txt`、自检 0 错误通过；残余"版本格式不常见"告警仅因检查器不认 `c1` 团结版后缀。
+- **S9-04**：国际 Unity 6 受中国镜像缺版本限制无法在本机下载；当前引擎为中国版团结引擎（Unity 中国发行版，兼容 Unity C# API）。若必须用国际 Unity 6，需人在有海外出口 / 非中国镜像的环境操作，或使用官方离线包。
 - **S9-03**：手绘风资产需原创生成 + 逐项溯源登记；AI 生成商用政策仍"待核"（自用不上架口径延续）。
 - **继承缺口**：S3-01/S3-02、S4-01~S4-05、S5-01~S5-07、S6-01~S6-03、S7-01~S7-03、S8-01~S8-03 全部照登；旧 Python 工程冻结归档，不在 G9 范围内修。
 
@@ -52,6 +53,15 @@
 - **旧工程零污染**：`python tools/verify_all.py` → **268 用例 ALL GATES GREEN**（skipped=3）；`python tools/gate.py` → `GATE OK`；`git diff -- data/ tests/golden_seed.json` = 0 行。
 - **自检发现的真实问题已修**：① 首轮 trace 行把中文注释当编号 → 压成纯编号（生成器同步修正）；② 首轮无场景文件 → 补零 GUID 引用的最小空场景，由 Editor 脚本首次打开重建；③ 根级 `Packages/`、`ProjectSettings/`、`docs/` 被误造 `.meta` → 生成器改为只给 `Assets/` 内部生成，重跑自检仍绿。
 - **提交口径超限登记**：① `c20ac26`（生成器 625 行）超 ≤400 行；② 一批场景/配置 8 文件、一批表现层 11 文件超 ≤5 文件口径。均因生成器与工程骨架为整体产物、按目录批次提交，如实登记不掩饰。
+
+## 2026-11-27 16:10 安装实测（用户要求「帮我装 Unity」）
+
+- **国际 Unity 6 在本机无法自动下载（硬限制）**：官方发布 API 最新 LTS = `6000.3.29f1` / changeset `96d2fe17529c`。但服务器出口 IP 在中国，`download.unity3d.com` 强制 302 到 `download.unitychina.cn`（阿里云 OSS），该镜像对 6000.x 及测过的旧版 LTS 全部返回 `404 NoSuchKey`。已试：直连 / 代理 / `--resolve` 指 Akamai IP / beta 域名 / query 绕行，全部仍被重定向。社区资料确认这是国内 Unity 6 已知问题（国际版 Hub 强跳 CN 链接导致校验失败）。**未采用第三方 DLL/镜像下载，遵守安全口径。**
+- **中国版 Unity Hub 已装**：官方 install 器 `public-cdn.cloud.unitychina.cn/hub/prod/UnityHubSetup.exe`（137 MB）直连下载，`/S` 静默安装到 `C:\Program Files\Unity Hub\Unity Hub.exe`，退出码 0。该 Hub 只报告团结引擎版本（`2022.3.62f3c1` / `2021.3.45f2c1` / `2020.3.49f1c1`）。
+- **Hub CLI 关键陷阱**：WorkBuddy 预设 `ELECTRON_RUN_AS_NODE=1`，会让 `"Unity Hub.exe" -- --headless <cmd>` 报 `Cannot find module '--headless'`。**须先 `env -u ELECTRON_RUN_AS_NODE -u NODE_OPTIONS`** 才能用 headless CLI。
+- **团结引擎 2022.3.62f3c1 已完整安装**：Hub `editors -i` 确认，安装目录 `C:\Program Files\Unity\Hub\Editor\2022.3.62f3c1`（5.7 GB，含 `Editor/Data` 与 `umbraoptimizer64.dll`）。过程教训：首次调用被 SIGTERM 中断 → 只装 253 MB 残缺壳、Hub 误报"已安装"；删除残缺目录后重装才完整。**工程版本已回填 `2022.3.62f3c1`，自检仍 0 错误通过**（检查器把 `c1` 后缀判为"版本格式不常见"告警，属工具口径限制，非工程错误；编译日志项仍跳过）。
+- **S9-04（新增，未解除 S9-01）**：Unity.exe 在此云服务器无法完成启动初始化。证据：完整安装后 `-batchmode -quit -nographics` 退出码 `140063`（不再是最初残缺安装的 `0xC0000135` DLL 缺失）、`-version` 返回 31 且无输出、不写日志；系统为 Windows Server 2022 + 虚拟显卡 `Ctyun CVGDOD Controller`，无可用显示/GPU 子系统。**结论：引擎已装但本机不能编译/进播放模式，不得宣称可玩。** 曾按 `0xC0000135` 判断缺 `xinput1_3.dll` 并从微软官方 DirectX CAB 补入 Editor 目录，重装完整包后该 DLL 不在导入表直接依赖中——此补入为可逆局部改动，未动 System32。
+- **实质进展**：S9-02（版本占位）已消项，工程用真实版本号；S9-01 仍未解除（环境无 GPU/显示）。验收口径不变，G9 仍待人裁决。
 
 ## 变更记录
 
