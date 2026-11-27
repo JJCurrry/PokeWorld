@@ -22,7 +22,7 @@
     {
       "level": "warn",
       "check": "projectVersion",
-      "message": "版本号格式不常见，请人工确认: 0.0.0-PENDING",
+      "message": "版本号格式不常见，请人工确认: 2022.3.62f3c1",
       "path": "ProjectSettings/ProjectVersion.txt",
       "hint": "",
       "files": []
