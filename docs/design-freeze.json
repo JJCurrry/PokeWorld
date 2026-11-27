@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "status": "frozen",
+  "frozenAt": "2026-11-27",
+  "project": "PokeWorld 3D · 潮屿巡游（G9 可玩独立原型）",
+  "items": [
+    { "id": "PLAT-001", "type": "platform", "name": "主平台 PC/Windows 1920x1080（依据人 P3 档位 + 旧工程自用口径；人未逐项确认平台）", "confirmed": false },
+    { "id": "MECH-001", "type": "mechanic", "name": "核心循环：探索→遭遇→战斗/捕捉→图鉴→能力门→新区域", "confirmed": true },
+    { "id": "MECH-002", "type": "mechanic", "name": "战斗状态机六态与唯一转移入口 BattleSystem.Apply", "confirmed": true },
+    { "id": "MECH-003", "type": "mechanic", "name": "主动接触遭遇（可见潮灵、8m 警戒、20m 脱战）", "confirmed": true },
+    { "id": "MECH-004", "type": "mechanic", "name": "能力门由图鉴条目派生、条件写数据、代码零能力名字面量", "confirmed": true },
+    { "id": "MECH-005", "type": "mechanic", "name": "图鉴登记（区域/地形/时段）与完成度驱动", "confirmed": true },
+    { "id": "MECH-006", "type": "mechanic", "name": "存档只存种子/flags/队伍，世界由种子重建", "confirmed": true },
+    { "id": "NUM-001", "type": "numeric", "name": "伤害公式与极值验算（含 defense 钳制 0.7）", "confirmed": false },
+    { "id": "NUM-002", "type": "numeric", "name": "捕捉公式与 0.02/0.95 钳制", "confirmed": false },
+    { "id": "NUM-003", "type": "numeric", "name": "经济三件套与掉率期望（全部待实测）", "confirmed": false },
+    { "id": "LEV-001", "type": "level", "name": "7 区域难度波形（含第 6 关喘息、无连续 3 关上升）", "confirmed": false },
+    { "id": "ART-001", "type": "art", "name": "手绘风风格锚点六字段（人 P5 给定方向）", "confirmed": true },
+    { "id": "ART-002", "type": "art", "name": "色彩板色号与四层明度阶梯、禁忌项", "confirmed": true },
+    { "id": "ART-003", "type": "art", "name": "P0 资源清单规格/数量/优先级/来源", "confirmed": true },
+    { "id": "UI-001", "type": "ui", "name": "界面清单与跳转、首启教学、安全区", "confirmed": true },
+    { "id": "AUD-001", "type": "audio", "name": "音效清单、音乐切换、打击感反馈点", "confirmed": true },
+    { "id": "PLAT-002", "type": "platform", "name": "Unity 工程骨架规范（版本待用户环境核验）", "confirmed": true }
+  ]
+}
