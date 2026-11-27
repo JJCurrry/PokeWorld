@@ -1,0 +1,129 @@
+{
+  "projectDir": "C:\\Users\\Administrator\\Desktop\\PokeWorld\\unity\\PokeWorld3D",
+  "errorCount": 0,
+  "warningCount": 2,
+  "items": [
+    {
+      "level": "info",
+      "check": "spec",
+      "message": "已加载规格文件: project-spec.json",
+      "path": "",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "info",
+      "check": "layout",
+      "message": "必需目录与文件齐全（15 个必需目录 / 2 个必需文件）",
+      "path": "",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "warn",
+      "check": "projectVersion",
+      "message": "版本号格式不常见，请人工确认: 0.0.0-PENDING",
+      "path": "ProjectSettings/ProjectVersion.txt",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "info",
+      "check": "manifest",
+      "message": "包依赖 3 项，格式合法",
+      "path": "Packages/manifest.json",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "info",
+      "check": "metaPairing",
+      "message": "17 个文件与 11 个目录的元数据配对完整",
+      "path": "",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "info",
+      "check": "guidUnique",
+      "message": "28 个 GUID 全部唯一",
+      "path": "",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "info",
+      "check": "scenes",
+      "message": "1 个场景均已写入构建列表",
+      "path": "",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "info",
+      "check": "buildSettings",
+      "message": "构建列表 1 个条目均有效且启用",
+      "path": "",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "info",
+      "check": "csharp",
+      "message": "检查了 13 个 C# 脚本",
+      "path": "",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "info",
+      "check": "danglingGuids",
+      "message": "未发现 GUID 引用（或引用所在文件已被抑制）",
+      "path": "",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "info",
+      "check": "absolutePaths",
+      "message": "未发现机器绝对路径",
+      "path": "",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "warn",
+      "check": "traceability",
+      "message": "有 5 个条目尚未确认，不应据此开发: LEV-001, NUM-001, NUM-002, NUM-003, PLAT-001",
+      "path": "",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "info",
+      "check": "traceability",
+      "message": "冻结条目 17 个（已确认 12），工程引用覆盖率 12/12 = 100%",
+      "path": "C:\\Users\\Administrator\\Desktop\\PokeWorld\\docs\\design-freeze.json",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "info",
+      "check": "compileLog",
+      "message": "未提供编译日志，跳过（加 --compile-log 可校验真实编译结果）",
+      "path": "",
+      "hint": "",
+      "files": []
+    },
+    {
+      "level": "info",
+      "check": "dotnetBuild",
+      "message": "未启用真实编译（加 --dotnet-build 启用，需要解决方案文件与 dotnet）",
+      "path": "",
+      "hint": "",
+      "files": []
+    }
+  ],
+  "scriptVersion": "1.1.0",
+  "ignored": {}
+}
