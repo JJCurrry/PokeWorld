@@ -114,6 +114,32 @@ class WindowSmoke(unittest.TestCase):
         self.assertTrue(result["ok"])
         self.assertGreaterEqual(result["cells_drawn"], 1)
 
+    @unittest.skipUnless(deps.pygame_available(), "pygame 不可用：窗口用例优雅跳过")
+    def test_real_keypress_drives_whole_loop(self):
+        """真实按键事件走通：移动→遭遇→战斗动作→图鉴；侧栏回显最近操作。"""
+        os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+        os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
+        import pygame
+        from src.view import overworld_view as ov
+        from src.view.overworld_view import ACTION_LABELS
+
+        pygame.init()
+        for key in (pygame.K_RIGHT, pygame.K_k, pygame.K_k, pygame.K_k, pygame.K_k):
+            pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=key))
+        result = ov.run_world(self.tables, SEED, max_frames=5, block=False)
+        self.assertIn("move:right", result["actions"])
+        self.assertIn("encounter", result["actions"])  # 走路自动触发遭遇
+        self.assertIn("catch", result["actions"])      # 战斗态 K 键生效
+        self.assertEqual(result["last_action"], "catch")
+        self.assertIn(result["last_action"], ACTION_LABELS)  # 侧栏回显有中文标签
+
+    def test_action_labels_cover_all_controls(self):
+        from src.view.overworld_view import ACTION_LABELS
+        for action in ("move:up", "move:down", "move:left", "move:right",
+                       "npc", "survey", "phase", "encounter", "attack",
+                       "catch", "flee", "save", "load", "quit"):
+            self.assertIn(action, ACTION_LABELS)
+
 
 class ArtAssets(unittest.TestCase):
     """G8/S8-01 原创美术资产：文件就位、真透明、稳定名、缺图降级。"""

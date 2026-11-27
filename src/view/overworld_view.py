@@ -33,6 +33,19 @@ HELP_LINES = (
     "P 昼夜 · F5 存 · F9 读 · Q 退出",
 )
 
+# 相机死区：玩家在视口中心 ±3 格内移动时地图不滚动，角色在屏幕上真实位移。
+# 修复「按方向键只有背景微动、角色像没反应」的观感问题（纯渲染参数，不改逻辑坐标）。
+CAMERA_DEADZONE = 3
+
+# 最近操作回显：让每次按键都有肉眼可见的反馈，B 级文案为 AI 草案、归人复核。
+ACTION_LABELS = {
+    "move:up": "向上走", "move:down": "向下走",
+    "move:left": "向左走", "move:right": "向右走",
+    "npc": "交谈", "survey": "巡查", "phase": "切换昼夜",
+    "encounter": "寻找野生潮灵", "attack": "攻击", "catch": "捕捉",
+    "flee": "撤离", "save": "存档", "load": "读档", "quit": "退出",
+}
+
 
 def _require(condition: object, message: str) -> None:
     if not condition:
@@ -179,7 +192,8 @@ def _draw_creature(surface: object, pygame: object, tables: dict,
         pygame.draw.circle(surface, (255, 230, 120), (cx, cy - 20), 4)
 
 
-def _panel_lines(explore: Explore, tables: dict, region: str, frame: int) -> list[str]:
+def _panel_lines(explore: Explore, tables: dict, region: str, frame: int,
+                 last_action: str = "") -> list[str]:
     state = explore.state
     progress = state.progress
     species = tables["species.json"]["creatures"]
@@ -198,6 +212,8 @@ def _panel_lines(explore: Explore, tables: dict, region: str, frame: int) -> lis
     elif explore.messages:
         lines.append(explore.messages[-1])
     lines.append(f"帧 {frame} · 连续世界 64×64")
+    if last_action:
+        lines.append("最近操作 " + ACTION_LABELS.get(last_action, last_action))
     return lines
 
 
@@ -220,11 +236,24 @@ def run_world(tables: dict, seed: str, *, max_frames: int | None = None,
     drawn = 0
     actions: list[str] = []
     running = True
-    gx0 = gy0 = 0
+    last_action = ""
+    # 开局居中，之后按死区增量跟随：角色在屏幕内真实位移，走够 3 格地图才滚动。
+    gx0 = max(0, min(overworld.WORLD_TILES - cols, int(world.x) - cols // 2))
+    gy0 = max(0, min(overworld.WORLD_TILES - rows, int(world.y) - rows // 2))
 
     while running and frames < limit:
-        gx0 = max(0, min(overworld.WORLD_TILES - cols, int(world.x) - cols // 2))
-        gy0 = max(0, min(overworld.WORLD_TILES - rows, int(world.y) - rows // 2))
+        target_x = int(world.x) - cols // 2
+        target_y = int(world.y) - rows // 2
+        if target_x > gx0 + CAMERA_DEADZONE:
+            gx0 = target_x - CAMERA_DEADZONE
+        elif target_x < gx0 - CAMERA_DEADZONE:
+            gx0 = target_x + CAMERA_DEADZONE
+        if target_y > gy0 + CAMERA_DEADZONE:
+            gy0 = target_y - CAMERA_DEADZONE
+        elif target_y < gy0 - CAMERA_DEADZONE:
+            gy0 = target_y + CAMERA_DEADZONE
+        gx0 = max(0, min(overworld.WORLD_TILES - cols, gx0))
+        gy0 = max(0, min(overworld.WORLD_TILES - rows, gy0))
         _draw_ground(surface, pygame, tables, seed, frames, gx0, gy0, cols, rows)
         region = explore.current_region(tables, world)
         _draw_landmarks(surface, pygame, tables, seed, frames,
@@ -239,13 +268,15 @@ def run_world(tables: dict, seed: str, *, max_frames: int | None = None,
         pygame.draw.rect(surface, (18, 30, 46), panel)
         pygame.draw.rect(surface, (42, 78, 112),
                          pygame.Rect(PANEL_X, 0, panel.width, 4))
+        status_lines = _panel_lines(world, tables, region, frames, last_action)
+        help_top = PANEL_TOP + (len(status_lines) + 1) * LINE_HEIGHT
         pygame.draw.line(surface, (58, 96, 132),
-                         (PANEL_X + 8, PANEL_TOP + 8 * LINE_HEIGHT - 6),
-                         (WINDOW_SIZE[0] - 12, PANEL_TOP + 8 * LINE_HEIGHT - 6), 1)
-        for index, line in enumerate(_panel_lines(world, tables, region, frames)):
+                         (PANEL_X + 8, help_top - 8),
+                         (WINDOW_SIZE[0] - 12, help_top - 8), 1)
+        for index, line in enumerate(status_lines):
             surface.blit(font.render(line, True, (230, 240, 248)),
                          (PANEL_X + 12, PANEL_TOP + index * LINE_HEIGHT))
-        help_top = PANEL_TOP + 9 * LINE_HEIGHT
+
         for index, line in enumerate(HELP_LINES):
             surface.blit(font.render(line, True, (255, 224, 140)),
                          (PANEL_X + 12, help_top + index * LINE_HEIGHT))
@@ -259,15 +290,17 @@ def run_world(tables: dict, seed: str, *, max_frames: int | None = None,
                 continue
             from .layout import action_for_key  # 复用 G5/G7 键位映射，零重复
             key = pygame.key.name(event.key)
-            action = action_for_key(key, world.state.world, region)
+            combat = world.battle is not None
+            # 战斗态走 COMBAT_KEY_ACTIONS；道具键按 encounters.json 表序派生（R3 零字面量）。
+            item_ids = tuple(str(key_id) for key_id in tables["encounters.json"]["items"])
+            action = action_for_key(key, world.state.world, region,
+                                    combat=combat, items=item_ids)
             if action is None:
                 continue
             if action == "quit":
                 running = False
                 break
-            if action.startswith("item:") or action in ("attack", "catch", "flee"):
-                world = explore.apply(tables, world, action)
-            elif action in ("auto", "save", "load"):
+            if action in ("auto", "save", "load"):
                 handler = callbacks.get(action)
                 if handler is None:
                     continue
@@ -276,9 +309,18 @@ def run_world(tables: dict, seed: str, *, max_frames: int | None = None,
                     running = False
                     break
                 world = updated
+            elif action.startswith("edge:") or action == "train":
+                continue  # G5 遗留动作：开放世界不用数字跨区 / 训练，避免异常中断窗口
+            elif action == "encounter" and combat:
+                continue  # 战斗中 B 无意义，忽略而不是让 _start_battle 抛错
             else:
                 world = explore.apply(tables, world, action)
+                # 陆地行走按确定性触发值进入遭遇（状态层 _move 不触发，autoplay 不受影响）。
+                if action.startswith("move:") and world.battle is None and explore.should_encounter(world):
+                    world = explore.apply(tables, world, "encounter")
+                    actions.append("encounter")
             actions.append(action)
+            last_action = action
         frames += 1
     pygame.quit()
     return {
@@ -289,6 +331,8 @@ def run_world(tables: dict, seed: str, *, max_frames: int | None = None,
         "region": explore.current_region(tables, world),
         "complete": explore.is_complete(tables, world),
         "actions": tuple(actions),
+        "last_action": last_action,
+        "combat": world.battle is not None,
         "art": {
             "player": atlas.get("player") is not None,
             "creatures": len(atlas.get("creatures", {})),
